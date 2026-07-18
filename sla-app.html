@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLA Transportadoras · Torre de Controle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg: #0B1320;
+    --panel: #121D30;
+    --panel-2: #182740;
+    --line: #24344F;
+    --text: #E6ECF5;
+    --muted: #7C8AA5;
+    --cyan: #29D8D8;
+    --amber: #F5A623;
+    --green: #3FCB8E;
+    --red: #F0616D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(41,216,216,0.08), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    padding:32px 24px 64px;
+  }
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  header{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px; border-bottom:1px solid var(--line); padding-bottom:20px;}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.16em; color:var(--cyan); text-transform:uppercase; margin:0 0 6px;}
+  h1{font-family:'Space Grotesk', sans-serif; font-size:30px; font-weight:700; margin:0; letter-spacing:-0.01em;}
+  .status{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); text-align:right;}
+  .status b{color:var(--green);}
+
+  .grid{display:grid; grid-template-columns: 340px 1fr; gap:20px;}
+  @media (max-width: 860px){ .grid{grid-template-columns: 1fr;} }
+
+  .panel{background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--line); border-radius:14px; padding:20px;}
+  .panel h2{font-family:'Space Grotesk',sans-serif; font-size:15px; margin:0 0 16px; color:var(--text); display:flex; align-items:center; gap:8px;}
+  .panel h2 .dot{width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan);}
+
+  label{display:block; font-size:11px; color:var(--muted); margin:14px 0 6px; text-transform:uppercase; letter-spacing:.06em;}
+  input, select{
+    width:100%; background:#0D1626; border:1px solid var(--line); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-family:'Inter',sans-serif; font-size:14px; outline:none;
+    transition:border-color .15s;
+  }
+  input:focus, select:focus{border-color:var(--cyan);}
+  input[type="datalist"]{}
+  datalist{}
+
+  button{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; cursor:pointer;
+    border:none; border-radius:8px; padding:11px 16px; transition:transform .1s, opacity .15s;
+  }
+  button:active{transform:scale(0.98);}
+  .btn-primary{width:100%; margin-top:18px; background:var(--cyan); color:#04211F;}
+  .btn-primary:hover{opacity:.9;}
+  .btn-ghost{background:transparent; color:var(--muted); border:1px solid var(--line); font-size:12px; padding:6px 10px;}
+  .btn-ghost:hover{color:var(--red); border-color:var(--red);}
+
+  .add-carrier-row{display:flex; gap:8px; margin-top:8px;}
+  .add-carrier-row input{flex:1;}
+  .btn-add-carrier{white-space:nowrap; color:var(--cyan); border-color:var(--line);}
+  .btn-add-carrier:hover{color:var(--cyan); border-color:var(--cyan); background:rgba(41,216,216,0.06);}
+  .carrier-tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+  .carrier-tag{font-family:'JetBrains Mono',monospace; font-size:11px; background:#0D1626; border:1px solid var(--line); color:var(--muted); padding:4px 8px; border-radius:6px; display:flex; align-items:center; gap:6px;}
+  .carrier-tag button{background:none; border:none; color:var(--muted); cursor:pointer; padding:0; font-size:13px; line-height:1;}
+  .carrier-tag button:hover{color:var(--red);}
+
+  .filters{display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
+  .filters > div{flex:1; min-width:160px;}
+
+  .chart-card{padding:20px 20px 8px;}
+  .chart-box{height:320px; position:relative;}
+  .legend-note{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:10px;}
+
+  #justifyBox{border:1px solid rgba(240,97,109,0.35); background:rgba(240,97,109,0.06); border-radius:10px; padding:12px 14px 14px; margin-top:14px;}
+  .gap-warning{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--red); margin-bottom:4px;}
+  .impact-preview{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--amber); margin:8px 0 2px;}
+
+  .row-actions{display:flex; gap:6px;}
+  tr.editing td{background:rgba(245,166,35,0.08); border-color:rgba(245,166,35,0.3);}
+  .btn-cancel-edit{color:var(--amber); border-color:var(--amber);}
+  .btn-cancel-edit:hover{background:rgba(245,166,35,0.08);}
+
+  table{width:100%; border-collapse:collapse; margin-top:8px; font-size:13px;}
+  th{text-align:left; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:10px 12px; border-bottom:1px solid var(--line);}
+  td{padding:10px 12px; border-bottom:1px solid var(--line); color:var(--text);}
+  tr:hover td{background:rgba(41,216,216,0.04);}
+  .sla-val{font-family:'JetBrains Mono',monospace; font-weight:600;}
+  .sla-good{color:var(--green);}
+  .sla-bad{color:var(--red);}
+  .empty{text-align:center; color:var(--muted); padding:30px; font-size:13px;}
+
+  .table-card{margin-top:20px; padding:20px;}
+  .table-scroll{max-height:340px; overflow-y:auto;}
+
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="eyebrow">Grupo MOAS · Torre de Controle</p>
+      <h1>SLA de Transportadoras</h1>
+    </div>
+    <div class="status" id="statusBox">carregando dados compartilhados…</div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2><span class="dot"></span>Registrar SLA</h2>
+
+      <label for="inpTransp">Transportadora</label>
+      <input id="inpTransp" list="dlTransp" placeholder="Ex: Patrus, MMA Cargas...">
+      <datalist id="dlTransp"></datalist>
+      <div class="add-carrier-row">
+        <input id="inpNovaTransp" placeholder="Nova transportadora...">
+        <button class="btn-ghost btn-add-carrier" id="btnAddCarrier">+ Cadastrar</button>
+      </div>
+      <div class="carrier-tags" id="carrierTags"></div>
+
+      <label for="inpAno">Ano</label>
+      <input id="inpAno" type="number" placeholder="2026" min="2000" max="2100">
+
+      <label for="inpMes">Mês</label>
+      <select id="inpMes">
+        <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+        <option value="3">Março</option><option value="4">Abril</option>
+        <option value="5">Maio</option><option value="6">Junho</option>
+        <option value="7">Julho</option><option value="8">Agosto</option>
+        <option value="9">Setembro</option><option value="10">Outubro</option>
+        <option value="11">Novembro</option><option value="12">Dezembro</option>
+      </select>
+
+      <label for="inpSla">SLA (%)</label>
+      <input id="inpSla" type="number" step="0.1" placeholder="Ex: 96.5" min="0" max="100">
+
+      <div id="justifyBox" style="display:none;">
+        <div class="gap-warning" id="gapWarning"></div>
+        <label for="inpTotalNF">Total de notas fiscais no mês</label>
+        <input id="inpTotalNF" type="number" min="0" placeholder="Ex: 294">
+        <label for="inpImpactadas">Notas fiscais impactadas (fora do prazo)</label>
+        <input id="inpImpactadas" type="number" min="0" placeholder="Ex: 24">
+        <div class="impact-preview" id="impactPreview"></div>
+        <label for="inpMotivo">Motivo / Justificativa</label>
+        <input id="inpMotivo" placeholder="Ex: Bloqueio de rodovia na BR-116...">
+      </div>
+
+      <button class="btn-primary" id="btnAdd">+ Adicionar registro</button>
+      <button class="btn-ghost btn-cancel-edit" id="btnCancelEdit" style="display:none; width:100%; margin-top:8px; text-align:center;">Cancelar edição</button>
+    </div>
+
+    <div class="panel chart-card">
+      <h2><span class="dot"></span>Evolução mensal</h2>
+      <div class="filters">
+        <div>
+          <label style="margin-top:0;">Transportadora</label>
+          <select id="filterTransp"><option value="__all__">Todas</option></select>
+        </div>
+        <div>
+          <label style="margin-top:0;">Ano</label>
+          <select id="filterAno"><option value="__all__">Todos</option></select>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="slaChart"></canvas></div>
+      <p class="legend-note">Linha tracejada = meta de referência (95%)</p>
+    </div>
+  </div>
+
+  <div class="panel table-card">
+    <h2><span class="dot"></span>Registros</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Transportadora</th><th>Mês/Ano</th><th>SLA</th><th>Justificativa</th><th></th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const MESES = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const PALETTE = ['#29D8D8','#F5A623','#3FCB8E','#F0616D','#9B8CFF','#FF9EC7','#63B3FF','#D4E157'];
+const SUPABASE_URL = 'https://mtbvkhubrwcjsljwjcmq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_6lbrzB3Z_chtr1uW_vxu1A_Gsn5jVss';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DEFAULT_CARRIERS = ['Minuano','Patrus','MMA','Rio Vermelho','Panex','TRD','Rodovitor'];
+let entries = [];
+let customCarriers = [];
+let chart = null;
+let editingId = null;
+
+function dbToEntry(row){
+  return {
+    id: row.id,
+    transportadora: row.transportadora,
+    ano: row.ano,
+    mes: row.mes,
+    sla: Number(row.sla),
+    totalNF: row.total_nf,
+    impactadas: row.impactadas,
+    motivo: row.motivo
+  };
+}
+
+async function loadData(){
+  try{
+    const { data, error } = await sb.from('sla_entries').select('*').order('ano', {ascending:false}).order('mes', {ascending:false});
+    if(error) throw error;
+    entries = (data || []).map(dbToEntry);
+  }catch(e){
+    entries = [];
+    setStatus('⚠ erro ao carregar registros');
+  }
+  try{
+    const { data, error } = await sb.from('sla_carriers').select('nome').order('nome');
+    if(error) throw error;
+    customCarriers = (data || []).map(r => r.nome);
+  }catch(e){
+    customCarriers = [];
+  }
+  renderAll();
+  setStatus(`<b>●</b> conectado ao Supabase · ${entries.length} registro(s)`);
+  subscribeRealtime();
+}
+
+function subscribeRealtime(){
+  sb.channel('sla-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sla_entries' }, () => reloadSilently())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sla_carriers' }, () => reloadSilently())
+    .subscribe();
+}
+
+async function reloadSilently(){
+  try{
+    const { data } = await sb.from('sla_entries').select('*').order('ano', {ascending:false}).order('mes', {ascending:false});
+    entries = (data || []).map(dbToEntry);
+    const { data: carriersData } = await sb.from('sla_carriers').select('nome').order('nome');
+    customCarriers = (carriersData || []).map(r => r.nome);
+    renderAll();
+    setStatus(`<b>●</b> atualizado automaticamente · ${entries.length} registro(s)`);
+  }catch(e){ /* silent */ }
+}
+
+function setStatus(html){
+  document.getElementById('statusBox').innerHTML = html;
+}
+
+function getCarriers(){
+  return [...new Set([...DEFAULT_CARRIERS, ...customCarriers, ...entries.map(e => e.transportadora)])].sort((a,b)=>a.localeCompare(b));
+}
+function getYears(){
+  return [...new Set(entries.map(e => e.ano))].sort((a,b)=>a-b);
+}
+
+function renderAll(){
+  renderDatalist();
+  renderCarrierTags();
+  renderFilters();
+  renderTable();
+  renderChart();
+}
+
+function renderCarrierTags(){
+  const box = document.getElementById('carrierTags');
+  const removable = customCarriers.slice().sort((a,b)=>a.localeCompare(b));
+  if(removable.length === 0){
+    box.innerHTML = '';
+    return;
+  }
+  box.innerHTML = removable.map(c => `
+    <span class="carrier-tag">${escapeHtml(c)}<button title="Remover transportadora" onclick="removeCarrier('${escapeHtml(c).replace(/'/g,"\\'")}')">&times;</button></span>
+  `).join('');
+}
+
+async function removeCarrier(name){
+  try{
+    const { error } = await sb.from('sla_carriers').delete().eq('nome', name);
+    if(error) throw error;
+    customCarriers = customCarriers.filter(c => c !== name);
+    renderAll();
+    setStatus(`<b>●</b> transportadora removida · visível a todos`);
+  }catch(e){
+    setStatus('⚠ erro ao remover transportadora');
+  }
+}
+
+function renderDatalist(){
+  const dl = document.getElementById('dlTransp');
+  dl.innerHTML = getCarriers().map(c => `<option value="${escapeHtml(c)}">`).join('');
+}
+
+function renderFilters(){
+  const fT = document.getElementById('filterTransp');
+  const fA = document.getElementById('filterAno');
+  const curT = fT.value, curA = fA.value;
+
+  fT.innerHTML = '<option value="__all__">Todas</option>' +
+    getCarriers().map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  fA.innerHTML = '<option value="__all__">Todos</option>' +
+    getYears().map(y => `<option value="${y}">${y}</option>`).join('');
+
+  if([...fT.options].some(o=>o.value===curT)) fT.value = curT;
+  if([...fA.options].some(o=>o.value===curA)) fA.value = curA;
+}
+
+function filteredEntries(){
+  const t = document.getElementById('filterTransp').value;
+  const a = document.getElementById('filterAno').value;
+  return entries.filter(e =>
+    (t === '__all__' || e.transportadora === t) &&
+    (a === '__all__' || String(e.ano) === a)
+  );
+}
+
+function renderTable(){
+  const body = document.getElementById('tableBody');
+  const rows = [...filteredEntries()].sort((x,y)=> y.ano - x.ano || y.mes - x.mes || x.transportadora.localeCompare(y.transportadora));
+  if(rows.length === 0){
+    body.innerHTML = '<tr><td colspan="4" class="empty">Nenhum registro ainda. Adicione o primeiro SLA ao lado.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(e => {
+    const belowTarget = e.sla < 95;
+    const gap = belowTarget ? (95 - e.sla).toFixed(1) : null;
+    const pctImpact = (belowTarget && e.totalNF > 0) ? (e.impactadas / e.totalNF * 100).toFixed(1) : null;
+    const justCell = belowTarget
+      ? `<span title="${escapeHtml(e.motivo || 'sem motivo informado')}">
+           <b>${e.impactadas ?? '—'}</b>/${e.totalNF ?? '—'} NFs impactadas
+           ${pctImpact !== null ? `· <span class="sla-bad">${pctImpact}%</span>` : ''}
+           <span style="color:var(--muted);"> (-${gap} pts vs meta)</span><br>
+           <span style="color:var(--muted); font-size:12px;">${escapeHtml(truncate(e.motivo, 42))}</span>
+         </span>`
+      : '<span style="color:var(--muted);">—</span>';
+    return `
+    <tr class="${e.id === editingId ? 'editing' : ''}">
+      <td>${escapeHtml(e.transportadora)}</td>
+      <td>${MESES[e.mes]}/${e.ano}</td>
+      <td class="sla-val ${e.sla >= 95 ? 'sla-good' : 'sla-bad'}">${e.sla.toFixed(1)}%</td>
+      <td>${justCell}</td>
+      <td class="row-actions">
+        <button class="btn-ghost" onclick="editEntry('${e.id}')">Editar</button>
+        <button class="btn-ghost" onclick="removeEntry('${e.id}')">Excluir</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function truncate(s, n){
+  if(!s) return 'sem motivo informado';
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+function renderChart(){
+  const box = document.querySelector('.chart-box');
+  if(typeof Chart === 'undefined'){
+    box.innerHTML = '<p style="color:var(--red); font-family:JetBrains Mono, monospace; font-size:12px; padding:20px;">⚠ Não foi possível carregar a biblioteca do gráfico (sem conexão?). Atualize a página para tentar novamente.</p>';
+    return;
+  }
+  if(!document.getElementById('slaChart')){
+    box.innerHTML = '<canvas id="slaChart"></canvas>';
+  }
+
+  const data = filteredEntries();
+  const carriers = [...new Set(data.map(e => e.transportadora))].sort((a,b)=>a.localeCompare(b));
+
+  const keySet = new Set(data.map(e => `${e.ano}-${String(e.mes).padStart(2,'0')}`));
+  const labels = [...keySet].sort();
+
+  const datasets = carriers.map((c, i) => {
+    const byKey = {};
+    data.filter(e => e.transportadora === c).forEach(e => {
+      byKey[`${e.ano}-${String(e.mes).padStart(2,'0')}`] = e.sla;
+    });
+    return {
+      label: c,
+      data: labels.map(k => byKey[k] ?? null),
+      borderColor: PALETTE[i % PALETTE.length],
+      backgroundColor: PALETTE[i % PALETTE.length],
+      spanGaps: true,
+      tension: 0.3,
+      pointRadius: 3,
+      borderWidth: 2,
+    };
+  });
+
+  datasets.push({
+    label: 'Meta (95%)',
+    data: labels.map(()=>95),
+    borderColor: 'rgba(124,138,165,0.55)',
+    borderDash: [6,4],
+    pointRadius: 0,
+    borderWidth: 1.5,
+  });
+
+  const displayLabels = labels.map(k => {
+    const [y,m] = k.split('-');
+    return `${MESES[parseInt(m,10)]}/${y.slice(2)}`;
+  });
+
+  const ctx = document.getElementById('slaChart').getContext('2d');
+  if(chart) chart.destroy();
+
+  if(labels.length === 0){
+    return;
+  }
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: displayLabels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#E6ECF5', font: { family: 'Inter', size: 11 } } },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.formattedValue}%` } }
+      },
+      scales: {
+        x: { ticks: { color: '#7C8AA5' }, grid: { color: 'rgba(36,52,79,0.6)' } },
+        y: { min: 0, max: 100, ticks: { color: '#7C8AA5', callback: v => v + '%' }, grid: { color: 'rgba(36,52,79,0.6)' } }
+      }
+    }
+  });
+}
+
+async function removeEntry(id){
+  try{
+    const { error } = await sb.from('sla_entries').delete().eq('id', id);
+    if(error) throw error;
+    entries = entries.filter(e => e.id !== id);
+    if(editingId === id) cancelEdit();
+    renderAll();
+    setStatus(`<b>●</b> registro excluído · ${entries.length} registro(s)`);
+  }catch(e){
+    setStatus('⚠ erro ao excluir registro');
+  }
+}
+
+function editEntry(id){
+  const e = entries.find(x => x.id === id);
+  if(!e) return;
+  editingId = id;
+  document.getElementById('inpTransp').value = e.transportadora;
+  document.getElementById('inpAno').value = e.ano;
+  document.getElementById('inpMes').value = e.mes;
+  document.getElementById('inpSla').value = e.sla;
+  document.getElementById('inpTotalNF').value = e.totalNF ?? '';
+  document.getElementById('inpImpactadas').value = e.impactadas ?? '';
+  document.getElementById('inpMotivo').value = e.motivo ?? '';
+  updateJustifyVisibility();
+  updateImpactPreview();
+  document.getElementById('btnAdd').textContent = '✓ Salvar alterações';
+  document.getElementById('btnCancelEdit').style.display = 'block';
+  renderTable();
+  document.getElementById('inpTransp').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function cancelEdit(){
+  editingId = null;
+  document.getElementById('inpTransp').value = '';
+  document.getElementById('inpAno').value = '';
+  document.getElementById('inpMes').value = '1';
+  document.getElementById('inpSla').value = '';
+  document.getElementById('inpTotalNF').value = '';
+  document.getElementById('inpImpactadas').value = '';
+  document.getElementById('inpMotivo').value = '';
+  updateJustifyVisibility();
+  updateImpactPreview();
+  document.getElementById('btnAdd').textContent = '+ Adicionar registro';
+  document.getElementById('btnCancelEdit').style.display = 'none';
+  renderTable();
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('inpSla').addEventListener('input', updateJustifyVisibility);
+document.getElementById('inpTotalNF').addEventListener('input', updateImpactPreview);
+document.getElementById('inpImpactadas').addEventListener('input', updateImpactPreview);
+
+function updateImpactPreview(){
+  const total = parseInt(document.getElementById('inpTotalNF').value, 10);
+  const imp = parseInt(document.getElementById('inpImpactadas').value, 10);
+  const preview = document.getElementById('impactPreview');
+  if(!isNaN(total) && total > 0 && !isNaN(imp)){
+    const pct = (imp / total * 100).toFixed(1);
+    preview.textContent = `→ representa ${pct}% do total de notas fiscais do mês`;
+  } else {
+    preview.textContent = '';
+  }
+}
+
+function updateJustifyVisibility(){
+  const sla = parseFloat(document.getElementById('inpSla').value);
+  const box = document.getElementById('justifyBox');
+  const warn = document.getElementById('gapWarning');
+  if(!isNaN(sla) && sla < 95){
+    box.style.display = 'block';
+    warn.textContent = `⚠ ${(95 - sla).toFixed(1)} pts abaixo da meta — justifique abaixo`;
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+document.getElementById('btnAdd').addEventListener('click', async () => {
+  const transp = document.getElementById('inpTransp').value.trim();
+  const ano = parseInt(document.getElementById('inpAno').value, 10);
+  const mes = parseInt(document.getElementById('inpMes').value, 10);
+  const sla = parseFloat(document.getElementById('inpSla').value);
+  const belowTarget = !isNaN(sla) && sla < 95;
+  const totalNF = belowTarget ? parseInt(document.getElementById('inpTotalNF').value, 10) : null;
+  const impactadas = belowTarget ? parseInt(document.getElementById('inpImpactadas').value, 10) : null;
+  const motivo = belowTarget ? document.getElementById('inpMotivo').value.trim() : null;
+
+  if(!transp){ alert('Informe o nome da transportadora.'); return; }
+  if(!ano || ano < 2000){ alert('Informe um ano válido.'); return; }
+  if(isNaN(sla) || sla < 0 || sla > 100){ alert('Informe um SLA entre 0 e 100.'); return; }
+  if(belowTarget && (isNaN(totalNF) || totalNF <= 0)){ alert('Informe o total de notas fiscais do mês.'); return; }
+  if(belowTarget && (isNaN(impactadas) || impactadas < 0)){ alert('Informe a quantidade de notas fiscais impactadas.'); return; }
+  if(belowTarget && impactadas > totalNF){ alert('A quantidade impactada não pode ser maior que o total de notas.'); return; }
+  if(belowTarget && !motivo){ alert('Informe o motivo da queda no SLA.'); return; }
+
+  const payload = {
+    transportadora: transp, ano, mes, sla,
+    total_nf: totalNF, impactadas, motivo
+  };
+
+  try{
+    if(editingId){
+      const { data, error } = await sb.from('sla_entries').update(payload).eq('id', editingId).select().single();
+      if(error) throw error;
+      const idx = entries.findIndex(x => x.id === editingId);
+      if(idx !== -1) entries[idx] = dbToEntry(data);
+      cancelEdit();
+      setStatus(`<b>●</b> registro atualizado · visível a todos`);
+    } else {
+      const { data, error } = await sb.from('sla_entries').insert(payload).select().single();
+      if(error) throw error;
+      entries.push(dbToEntry(data));
+      document.getElementById('inpSla').value = '';
+      document.getElementById('inpTotalNF').value = '';
+      document.getElementById('inpImpactadas').value = '';
+      document.getElementById('inpMotivo').value = '';
+      updateJustifyVisibility();
+      setStatus(`<b>●</b> salvo · ${entries.length} registro(s) · visível a todos`);
+    }
+    renderAll();
+  }catch(e){
+    setStatus('⚠ erro ao salvar dados');
+  }
+});
+
+document.getElementById('btnCancelEdit').addEventListener('click', cancelEdit);
+
+document.getElementById('btnAddCarrier').addEventListener('click', async () => {
+  const input = document.getElementById('inpNovaTransp');
+  const name = input.value.trim();
+  if(!name){ return; }
+  if(getCarriers().some(c => c.toLowerCase() === name.toLowerCase())){
+    alert('Essa transportadora já está cadastrada.');
+    return;
+  }
+  try{
+    const { error } = await sb.from('sla_carriers').insert({ nome: name });
+    if(error) throw error;
+    customCarriers.push(name);
+    input.value = '';
+    renderAll();
+    setStatus(`<b>●</b> transportadora cadastrada · visível a todos`);
+  }catch(e){
+    setStatus('⚠ erro ao cadastrar transportadora');
+  }
+});
+
+document.getElementById('inpNovaTransp').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('btnAddCarrier').click(); }
+});
+
+document.getElementById('filterTransp').addEventListener('change', () => { renderTable(); renderChart(); });
+document.getElementById('filterAno').addEventListener('change', () => { renderTable(); renderChart(); });
+
+loadData();
+</script>
+</body>
+</html>

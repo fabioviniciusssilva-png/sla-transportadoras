@@ -3,600 +3,572 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SLA Transportadoras · Torre de Controle</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>Torre de Controle · Grupo MOAS</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-  :root{
-    --bg: #0B1320;
-    --panel: #121D30;
-    --panel-2: #182740;
-    --line: #24344F;
-    --text: #E6ECF5;
-    --muted: #7C8AA5;
-    --cyan: #29D8D8;
-    --amber: #F5A623;
-    --green: #3FCB8E;
-    --red: #F0616D;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:
-      radial-gradient(1100px 500px at 85% -10%, rgba(41,216,216,0.08), transparent 60%),
-      var(--bg);
-    color:var(--text);
-    font-family:'Inter', sans-serif;
-    min-height:100vh;
-    padding:32px 24px 64px;
-  }
-  .wrap{max-width:1180px; margin:0 auto;}
+:root{
+  --bg:#0B1320;--panel:#121D30;--panel2:#182740;--line:#24344F;
+  --text:#E6ECF5;--muted:#7C8AA5;--cyan:#29D8D8;--amber:#F5A623;
+  --green:#3FCB8E;--red:#F0616D;--purple:#9B8CFF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1100px 500px at 80% -10%,rgba(41,216,216,.07),transparent 60%),var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
 
-  header{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px; border-bottom:1px solid var(--line); padding-bottom:20px;}
-  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.16em; color:var(--cyan); text-transform:uppercase; margin:0 0 6px;}
-  h1{font-family:'Space Grotesk', sans-serif; font-size:30px; font-weight:700; margin:0; letter-spacing:-0.01em;}
-  .status{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); text-align:right;}
-  .status b{color:var(--green);}
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:12px}
+.nav-brand{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text)}
+.nav-brand span{color:var(--cyan)}
+.nav-tabs{display:flex;gap:4px;background:#0D1626;border:1px solid var(--line);border-radius:10px;padding:4px}
+.tab{padding:8px 20px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border:none;background:transparent;transition:all .15s}
+.tab.active{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.nav-status{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.nav-status b{color:var(--green)}
 
-  .grid{display:grid; grid-template-columns: 340px 1fr; gap:20px;}
-  @media (max-width: 860px){ .grid{grid-template-columns: 1fr;} }
+/* PAGES */
+.page{display:none;padding:24px 28px 60px}
+.page.active{display:block}
 
-  .panel{background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--line); border-radius:14px; padding:20px;}
-  .panel h2{font-family:'Space Grotesk',sans-serif; font-size:15px; margin:0 0 16px; color:var(--text); display:flex; align-items:center; gap:8px;}
-  .panel h2 .dot{width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan);}
+/* GRID */
+.grid2{display:grid;grid-template-columns:340px 1fr;gap:20px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
 
-  label{display:block; font-size:11px; color:var(--muted); margin:14px 0 6px; text-transform:uppercase; letter-spacing:.06em;}
-  input, select{
-    width:100%; background:#0D1626; border:1px solid var(--line); color:var(--text);
-    padding:10px 12px; border-radius:8px; font-family:'Inter',sans-serif; font-size:14px; outline:none;
-    transition:border-color .15s;
-  }
-  input:focus, select:focus{border-color:var(--cyan);}
-  input[type="datalist"]{}
-  datalist{}
+/* PANEL */
+.panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:18px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);flex-shrink:0}
+.dot.amber{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.dot.green{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot.red{background:var(--red);box-shadow:0 0 8px var(--red)}
 
-  button{
-    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; cursor:pointer;
-    border:none; border-radius:8px; padding:11px 16px; transition:transform .1s, opacity .15s;
-  }
-  button:active{transform:scale(0.98);}
-  .btn-primary{width:100%; margin-top:18px; background:var(--cyan); color:#04211F;}
-  .btn-primary:hover{opacity:.9;}
-  .btn-ghost{background:transparent; color:var(--muted); border:1px solid var(--line); font-size:12px; padding:6px 10px;}
-  .btn-ghost:hover{color:var(--red); border-color:var(--red);}
+/* FORM */
+label.lbl{display:block;font-size:11px;color:var(--muted);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{width:100%;background:#0D1626;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan)}
+textarea{resize:vertical;min-height:72px}
+select option{background:#0D1626}
 
-  .add-carrier-row{display:flex; gap:8px; margin-top:8px;}
-  .add-carrier-row input{flex:1;}
-  .btn-add-carrier{white-space:nowrap; color:var(--cyan); border-color:var(--line);}
-  .btn-add-carrier:hover{color:var(--cyan); border-color:var(--cyan); background:rgba(41,216,216,0.06);}
-  .carrier-tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
-  .carrier-tag{font-family:'JetBrains Mono',monospace; font-size:11px; background:#0D1626; border:1px solid var(--line); color:var(--muted); padding:4px 8px; border-radius:6px; display:flex; align-items:center; gap:6px;}
-  .carrier-tag button{background:none; border:none; color:var(--muted); cursor:pointer; padding:0; font-size:13px; line-height:1;}
-  .carrier-tag button:hover{color:var(--red);}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;cursor:pointer;border:none;border-radius:8px;padding:11px 16px;transition:transform .1s,opacity .15s}
+.btn:active{transform:scale(.98)}
+.btn-primary{width:100%;margin-top:16px;background:var(--cyan);color:#04211F}
+.btn-primary:hover{opacity:.9}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-size:12px;padding:5px 10px}
+.btn-ghost:hover{color:var(--red);border-color:var(--red)}
+.btn-amber{background:transparent;color:var(--amber);border:1px solid var(--amber);font-size:12px;padding:5px 10px}
+.btn-cancel{width:100%;margin-top:8px;background:transparent;color:var(--amber);border:1px solid var(--amber)}
 
-  .filters{display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
-  .filters > div{flex:1; min-width:160px;}
+/* JUSTIFY BOX */
+#justifyBox{border:1px solid rgba(240,97,109,.35);background:rgba(240,97,109,.06);border-radius:10px;padding:12px 14px;margin-top:12px}
+.gap-warn{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red);margin-bottom:6px}
+.impact-prev{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);margin:6px 0 2px}
 
-  .chart-card{padding:20px 20px 8px;}
-  .chart-box{height:320px; position:relative;}
-  .legend-note{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:10px;}
+/* CARRIERS */
+.carrier-row{display:flex;gap:8px;margin-top:8px}
+.carrier-row input{flex:1}
+.carrier-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ctag{font-size:11px;background:#0D1626;border:1px solid var(--line);color:var(--muted);padding:3px 8px;border-radius:6px;display:flex;align-items:center;gap:5px}
+.ctag button{background:none;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:12px;line-height:1}
+.ctag button:hover{color:var(--red)}
 
-  #justifyBox{border:1px solid rgba(240,97,109,0.35); background:rgba(240,97,109,0.06); border-radius:10px; padding:12px 14px 14px; margin-top:14px;}
-  .gap-warning{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--red); margin-bottom:4px;}
-  .impact-preview{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--amber); margin:8px 0 2px;}
+/* FILTERS */
+.filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.filters>div{flex:1;min-width:140px}
+.filters label.lbl{margin-top:0}
 
-  .row-actions{display:flex; gap:6px;}
-  tr.editing td{background:rgba(245,166,35,0.08); border-color:rgba(245,166,35,0.3);}
-  .btn-cancel-edit{color:var(--amber); border-color:var(--amber);}
-  .btn-cancel-edit:hover{background:rgba(245,166,35,0.08);}
+/* CHART */
+.chart-wrap{height:300px;position:relative}
+.legend-note{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:8px}
 
-  table{width:100%; border-collapse:collapse; margin-top:8px; font-size:13px;}
-  th{text-align:left; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:10px 12px; border-bottom:1px solid var(--line);}
-  td{padding:10px 12px; border-bottom:1px solid var(--line); color:var(--text);}
-  tr:hover td{background:rgba(41,216,216,0.04);}
-  .sla-val{font-family:'JetBrains Mono',monospace; font-weight:600;}
-  .sla-good{color:var(--green);}
-  .sla-bad{color:var(--red);}
-  .empty{text-align:center; color:var(--muted); padding:30px; font-size:13px;}
+/* TABLE */
+.tscroll{max-height:360px;overflow-y:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:9px 12px;border-bottom:1px solid var(--line)}
+td{padding:9px 12px;border-bottom:1px solid var(--line)}
+tr:hover td{background:rgba(41,216,216,.03)}
+.sla-good{color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:600}
+.sla-bad{color:var(--red);font-family:'JetBrains Mono',monospace;font-weight:600}
+.empty{text-align:center;color:var(--muted);padding:28px;font-size:13px}
+.row-actions{display:flex;gap:6px}
+tr.editing td{background:rgba(245,166,35,.06)}
 
-  .table-card{margin-top:20px; padding:20px;}
-  .table-scroll{max-height:340px; overflow-y:auto;}
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.badge-aberta{background:rgba(240,97,109,.15);color:var(--red)}
+.badge-resolvida{background:rgba(63,203,142,.15);color:var(--green)}
+.badge-tipo{background:rgba(41,216,216,.12);color:var(--cyan);font-size:11px;padding:2px 7px;border-radius:5px}
 
-  ::-webkit-scrollbar{width:8px; height:8px;}
-  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;line-height:1}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+
+/* PAINEL */
+.painel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px}
+.painel-card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:20px}
+.painel-card h3{font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.rank-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.rank-item:last-child{border:none}
+.rank-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);width:18px}
+.rank-name{flex:1;font-size:13px}
+.rank-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600}
+.painel-month{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:var(--cyan);margin-bottom:4px}
+.oc-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.oc-chip{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <header>
-    <div>
-      <p class="eyebrow">Grupo MOAS · Torre de Controle</p>
-      <h1>SLA de Transportadoras</h1>
-    </div>
-    <div class="status" id="statusBox">carregando dados compartilhados…</div>
-  </header>
+<nav class="nav">
+  <div class="nav-brand">Grupo <span>MOAS</span> · Torre de Controle</div>
+  <div class="nav-tabs">
+    <button class="tab active" onclick="showPage('sla',this)">SLA</button>
+    <button class="tab" onclick="showPage('oc',this)">Ocorr&#234;ncias</button>
+    <button class="tab" onclick="showPage('painel',this)">Painel</button>
+  </div>
+  <div class="nav-status" id="statusBox">carregando...</div>
+</nav>
 
-  <div class="grid">
+<!-- ===== SLA PAGE ===== -->
+<div class="page active" id="page-sla">
+  <div class="grid2">
     <div class="panel">
-      <h2><span class="dot"></span>Registrar SLA</h2>
+      <div class="panel-title"><span class="dot"></span>Registrar SLA</div>
 
-      <label for="inpTransp">Transportadora</label>
-      <input id="inpTransp" list="dlTransp" placeholder="Ex: Patrus, MMA Cargas...">
+      <label class="lbl">Transportadora</label>
+      <input id="sInpTransp" list="dlTransp" placeholder="Ex: Patrus...">
       <datalist id="dlTransp"></datalist>
-      <div class="add-carrier-row">
-        <input id="inpNovaTransp" placeholder="Nova transportadora...">
-        <button class="btn-ghost btn-add-carrier" id="btnAddCarrier">+ Cadastrar</button>
+      <div class="carrier-row">
+        <input id="sInpNova" placeholder="Nova transportadora...">
+        <button class="btn btn-ghost" id="sBtnAddCarrier">+ Cadastrar</button>
       </div>
       <div class="carrier-tags" id="carrierTags"></div>
 
-      <label for="inpAno">Ano</label>
-      <input id="inpAno" type="number" placeholder="2026" min="2000" max="2100">
+      <label class="lbl">Ano</label>
+      <input id="sInpAno" type="number" placeholder="2026" min="2000" max="2100">
 
-      <label for="inpMes">Mês</label>
-      <select id="inpMes">
+      <label class="lbl">M&#234;s</label>
+      <select id="sInpMes">
         <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-        <option value="3">Março</option><option value="4">Abril</option>
+        <option value="3">Mar&#231;o</option><option value="4">Abril</option>
         <option value="5">Maio</option><option value="6">Junho</option>
         <option value="7">Julho</option><option value="8">Agosto</option>
         <option value="9">Setembro</option><option value="10">Outubro</option>
         <option value="11">Novembro</option><option value="12">Dezembro</option>
       </select>
 
-      <label for="inpSla">SLA (%)</label>
-      <input id="inpSla" type="number" step="0.1" placeholder="Ex: 96.5" min="0" max="100">
+      <label class="lbl">SLA (%)</label>
+      <input id="sInpSla" type="number" step="0.1" placeholder="Ex: 96.5" min="0" max="100">
 
-      <div id="justifyBox" style="display:none;">
-        <div class="gap-warning" id="gapWarning"></div>
-        <label for="inpTotalNF">Total de notas fiscais no mês</label>
-        <input id="inpTotalNF" type="number" min="0" placeholder="Ex: 294">
-        <label for="inpImpactadas">Notas fiscais impactadas (fora do prazo)</label>
-        <input id="inpImpactadas" type="number" min="0" placeholder="Ex: 24">
-        <div class="impact-preview" id="impactPreview"></div>
-        <label for="inpMotivo">Motivo / Justificativa</label>
-        <input id="inpMotivo" placeholder="Ex: Bloqueio de rodovia na BR-116...">
+      <div id="justifyBox" style="display:none">
+        <div class="gap-warn" id="gapWarn"></div>
+        <label class="lbl">Total de NFs no m&#234;s</label>
+        <input id="sInpTotalNF" type="number" min="0" placeholder="Ex: 294">
+        <label class="lbl">NFs impactadas (fora do prazo)</label>
+        <input id="sInpImpact" type="number" min="0" placeholder="Ex: 24">
+        <div class="impact-prev" id="impactPrev"></div>
+        <label class="lbl">Motivo / Justificativa</label>
+        <input id="sInpMotivo" placeholder="Ex: Bloqueio de rodovia...">
       </div>
 
-      <button class="btn-primary" id="btnAdd">+ Adicionar registro</button>
-      <button class="btn-ghost btn-cancel-edit" id="btnCancelEdit" style="display:none; width:100%; margin-top:8px; text-align:center;">Cancelar edição</button>
+      <button class="btn btn-primary" id="sBtnAdd">+ Adicionar registro</button>
+      <button class="btn btn-cancel" id="sBtnCancel" style="display:none">Cancelar edi&#231;&#227;o</button>
     </div>
 
-    <div class="panel chart-card">
-      <h2><span class="dot"></span>Evolução mensal</h2>
+    <div class="panel" style="padding:20px 20px 8px">
+      <div class="panel-title"><span class="dot"></span>Evolu&#231;&#227;o mensal</div>
       <div class="filters">
-        <div>
-          <label style="margin-top:0;">Transportadora</label>
-          <select id="filterTransp"><option value="__all__">Todas</option></select>
-        </div>
-        <div>
-          <label style="margin-top:0;">Ano</label>
-          <select id="filterAno"><option value="__all__">Todos</option></select>
-        </div>
+        <div><label class="lbl">Transportadora</label><select id="sFiltT"><option value="__all__">Todas</option></select></div>
+        <div><label class="lbl">Ano</label><select id="sFiltA"><option value="__all__">Todos</option></select></div>
       </div>
-      <div class="chart-box"><canvas id="slaChart"></canvas></div>
-      <p class="legend-note">Linha tracejada = meta de referência (95%)</p>
+      <div class="chart-wrap"><canvas id="slaChart"></canvas></div>
+      <p class="legend-note">Linha tracejada = meta 95%</p>
     </div>
   </div>
 
-  <div class="panel table-card">
-    <h2><span class="dot"></span>Registros</h2>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Transportadora</th><th>Mês/Ano</th><th>SLA</th><th>Justificativa</th><th></th></tr></thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+  <div class="panel" style="margin-top:20px;padding:20px">
+    <div class="panel-title"><span class="dot"></span>Registros</div>
+    <div class="tscroll">
+      <table><thead><tr><th>Transportadora</th><th>M&#234;s/Ano</th><th>SLA</th><th>Justificativa</th><th></th></tr></thead>
+      <tbody id="sTableBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== OCORRENCIAS PAGE ===== -->
+<div class="page" id="page-oc">
+  <div class="stats-row" id="ocStats"></div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-title"><span class="dot amber"></span>Registrar Ocorr&#234;ncia</div>
+
+      <label class="lbl">Transportadora</label>
+      <select id="oInpTransp"><option value="">Selecione...</option></select>
+
+      <label class="lbl">Data da Ocorr&#234;ncia</label>
+      <input id="oInpData" type="date">
+
+      <label class="lbl">Tipo</label>
+      <select id="oInpTipo">
+        <option value="">Selecione...</option>
+        <option>Atraso</option>
+        <option>Avaria</option>
+        <option>Extravio</option>
+        <option>Cliente Ausente</option>
+        <option>Recusa</option>
+        <option>Agendamento</option>
+      </select>
+
+      <label class="lbl">N&#250;mero da NF</label>
+      <input id="oInpNF" placeholder="Ex: 123456">
+
+      <label class="lbl">Descri&#231;&#227;o</label>
+      <textarea id="oInpDesc" placeholder="Descreva o ocorrido..."></textarea>
+
+      <label class="lbl">Status</label>
+      <select id="oInpStatus">
+        <option value="Aberta">Aberta</option>
+        <option value="Resolvida">Resolvida</option>
+      </select>
+
+      <button class="btn btn-primary" id="oBtnAdd">+ Registrar ocorr&#234;ncia</button>
+      <button class="btn btn-cancel" id="oBtnCancel" style="display:none">Cancelar edi&#231;&#227;o</button>
+    </div>
+
+    <div class="panel" style="padding:20px 20px 8px">
+      <div class="panel-title"><span class="dot amber"></span>Ocorr&#234;ncias por tipo</div>
+      <div class="filters">
+        <div><label class="lbl">Transportadora</label><select id="oFiltT"><option value="__all__">Todas</option></select></div>
+        <div><label class="lbl">Tipo</label><select id="oFiltTipo"><option value="__all__">Todos</option><option>Atraso</option><option>Avaria</option><option>Extravio</option><option>Cliente Ausente</option><option>Recusa</option><option>Agendamento</option></select></div>
+        <div><label class="lbl">Status</label><select id="oFiltStatus"><option value="__all__">Todos</option><option>Aberta</option><option>Resolvida</option></select></div>
+      </div>
+      <div class="chart-wrap"><canvas id="ocChart"></canvas></div>
     </div>
   </div>
 
+  <div class="panel" style="margin-top:20px;padding:20px">
+    <div class="panel-title"><span class="dot amber"></span>Lista de Ocorr&#234;ncias</div>
+    <div class="tscroll">
+      <table><thead><tr><th>Transportadora</th><th>Data</th><th>Tipo</th><th>NF</th><th>Descri&#231;&#227;o</th><th>Status</th><th></th></tr></thead>
+      <tbody id="oTableBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAINEL PAGE ===== -->
+<div class="page" id="page-painel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div class="painel-month" id="painelMonth"></div>
+      <div style="color:var(--muted);font-size:13px">Painel de Reuni&#227;o Mensal · Grupo MOAS</div>
+    </div>
+    <div class="filters" style="margin:0">
+      <div><label class="lbl">M&#234;s</label><select id="pFiltMes"><option value="__all__">Todos</option><option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option><option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
+      <div><label class="lbl">Ano</label><select id="pFiltAno"><option value="__all__">Todos</option></select></div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="painelStats"></div>
+
+  <div class="painel-grid">
+    <div class="painel-card">
+      <h3>&#127942; Ranking SLA</h3>
+      <div id="rankingSLA"></div>
+    </div>
+    <div class="painel-card">
+      <h3>&#9888;&#65039; Ocorr&#234;ncias por Tipo</h3>
+      <div class="oc-bar" id="painelOcTipos"></div>
+      <div style="margin-top:16px"><canvas id="painelOcChart" height="180"></canvas></div>
+    </div>
+    <div class="painel-card">
+      <h3>&#128202; SLA Evolu&#231;&#227;o</h3>
+      <div class="chart-wrap" style="height:200px"><canvas id="painelSlaChart"></canvas></div>
+    </div>
+    <div class="painel-card">
+      <h3>&#128204; Ocorr&#234;ncias por Transportadora</h3>
+      <div id="rankingOc"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-const MESES = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const PALETTE = ['#29D8D8','#F5A623','#3FCB8E','#F0616D','#9B8CFF','#FF9EC7','#63B3FF','#D4E157'];
-const SUPABASE_URL = 'https://mtbvkhubrwcjsljwjcmq.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_6lbrzB3Z_chtr1uW_vxu1A_Gsn5jVss';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SB_URL='https://mtbvkhubrwcjsljwjcmq.supabase.co';
+const SB_KEY='sb_publishable_6lbrzB3Z_chtr1uW_vxu1A_Gsn5jVss';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const DEF=['Minuano','Patrus','MMA','Rio Vermelho','Panex','TRD','Rodovitor'];
+const MESES=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MESN=['','Janeiro','Fevereiro','Mar\u00e7o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const PAL=['#29D8D8','#F5A623','#3FCB8E','#F0616D','#9B8CFF','#FF9EC7','#63B3FF','#D4E157'];
+const OC_PAL={Atraso:'#F0616D',Avaria:'#F5A623',Extravio:'#9B8CFF','Cliente Ausente':'#63B3FF',Recusa:'#FF9EC7',Agendamento:'#3FCB8E'};
 
-const DEFAULT_CARRIERS = ['Minuano','Patrus','MMA','Rio Vermelho','Panex','TRD','Rodovitor'];
-let entries = [];
-let customCarriers = [];
-let chart = null;
-let editingId = null;
+let slaEntries=[],customCarriers=[],ocorrencias=[];
+let slaChart=null,ocChart=null,pSlaChart=null,pOcChart=null;
+let sEditId=null,oEditId=null;
 
-function dbToEntry(row){
-  return {
-    id: row.id,
-    transportadora: row.transportadora,
-    ano: row.ano,
-    mes: row.mes,
-    sla: Number(row.sla),
-    totalNF: row.total_nf,
-    impactadas: row.impactadas,
-    motivo: row.motivo
-  };
-}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function st(h){document.getElementById('statusBox').innerHTML=h;}
+function t2s(r){return{id:r.id,transportadora:r.transportadora,ano:r.ano,mes:r.mes,sla:Number(r.sla),totalNF:r.total_nf,impactadas:r.impactadas,motivo:r.motivo};}
+function o2s(r){return{id:r.id,transportadora:r.transportadora,data:r.data_ocorrencia,tipo:r.tipo,nf:r.numero_nf,desc:r.descricao,status:r.status};}
 
-async function loadData(){
-  try{
-    const { data, error } = await sb.from('sla_entries').select('*').order('ano', {ascending:false}).order('mes', {ascending:false});
-    if(error) throw error;
-    entries = (data || []).map(dbToEntry);
-  }catch(e){
-    entries = [];
-    setStatus('⚠ erro ao carregar registros');
-  }
-  try{
-    const { data, error } = await sb.from('sla_carriers').select('nome').order('nome');
-    if(error) throw error;
-    customCarriers = (data || []).map(r => r.nome);
-  }catch(e){
-    customCarriers = [];
-  }
+async function loadAll(){
+  try{const{data}=await sb.from('sla_entries').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});slaEntries=(data||[]).map(t2s);}catch(e){slaEntries=[];}
+  try{const{data}=await sb.from('sla_carriers').select('nome').order('nome');customCarriers=(data||[]).map(r=>r.nome);}catch(e){customCarriers=[];}
+  try{const{data}=await sb.from('ocorrencias').select('*').order('data_ocorrencia',{ascending:false});ocorrencias=(data||[]).map(o2s);}catch(e){ocorrencias=[];}
   renderAll();
-  setStatus(`<b>●</b> conectado ao Supabase · ${entries.length} registro(s)`);
-  subscribeRealtime();
+  st(`<b>&#9679;</b> conectado &middot; ${slaEntries.length} SLAs &middot; ${ocorrencias.length} ocorr&ecirc;ncias`);
+  sb.channel('live').on('postgres_changes',{event:'*',schema:'public',table:'sla_entries'},reload).on('postgres_changes',{event:'*',schema:'public',table:'sla_carriers'},reload).on('postgres_changes',{event:'*',schema:'public',table:'ocorrencias'},reload).subscribe();
 }
 
-function subscribeRealtime(){
-  sb.channel('sla-live')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'sla_entries' }, () => reloadSilently())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'sla_carriers' }, () => reloadSilently())
-    .subscribe();
+async function reload(){
+  try{const{data}=await sb.from('sla_entries').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});slaEntries=(data||[]).map(t2s);}catch(e){}
+  try{const{data}=await sb.from('sla_carriers').select('nome').order('nome');customCarriers=(data||[]).map(r=>r.nome);}catch(e){}
+  try{const{data}=await sb.from('ocorrencias').select('*').order('data_ocorrencia',{ascending:false});ocorrencias=(data||[]).map(o2s);}catch(e){}
+  renderAll();
+  st(`<b>&#9679;</b> atualizado &middot; ${slaEntries.length} SLAs &middot; ${ocorrencias.length} ocorr&ecirc;ncias`);
 }
 
-async function reloadSilently(){
-  try{
-    const { data } = await sb.from('sla_entries').select('*').order('ano', {ascending:false}).order('mes', {ascending:false});
-    entries = (data || []).map(dbToEntry);
-    const { data: carriersData } = await sb.from('sla_carriers').select('nome').order('nome');
-    customCarriers = (carriersData || []).map(r => r.nome);
-    renderAll();
-    setStatus(`<b>●</b> atualizado automaticamente · ${entries.length} registro(s)`);
-  }catch(e){ /* silent */ }
+function getCarriers(){return[...new Set([...DEF,...customCarriers,...slaEntries.map(e=>e.transportadora),...ocorrencias.map(o=>o.transportadora)])].sort((a,b)=>a.localeCompare(b));}
+
+function renderAll(){renderSLA();renderOC();renderPainel();}
+
+/* ===== SLA ===== */
+function renderSLA(){
+  // datalist + carrier tags
+  document.getElementById('dlTransp').innerHTML=getCarriers().map(c=>`<option value="${esc(c)}">`).join('');
+  const box=document.getElementById('carrierTags');
+  const rem=customCarriers.slice().sort((a,b)=>a.localeCompare(b));
+  box.innerHTML=rem.map(c=>`<span class="ctag">${esc(c)}<button onclick="rmCarrier('${esc(c).replace(/'/g,"\\'")}')">&#215;</button></span>`).join('');
+  // filters
+  const fT=document.getElementById('sFiltT'),fA=document.getElementById('sFiltA');
+  const cT=fT.value,cA=fA.value;
+  fT.innerHTML='<option value="__all__">Todas</option>'+getCarriers().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  fA.innerHTML='<option value="__all__">Todos</option>'+ [...new Set(slaEntries.map(e=>e.ano))].sort((a,b)=>a-b).map(y=>`<option value="${y}">${y}</option>`).join('');
+  if([...fT.options].some(o=>o.value===cT))fT.value=cT;
+  if([...fA.options].some(o=>o.value===cA))fA.value=cA;
+  // painel ano filter
+  const pA=document.getElementById('pFiltAno');const cpA=pA.value;
+  pA.innerHTML='<option value="__all__">Todos</option>'+ [...new Set(slaEntries.map(e=>e.ano))].sort((a,b)=>a-b).map(y=>`<option value="${y}">${y}</option>`).join('');
+  if([...pA.options].some(o=>o.value===cpA))pA.value=cpA;
+  // oc transp filters
+  ['oFiltT','oInpTransp'].forEach(id=>{const el=document.getElementById(id);const cv=el.value;el.innerHTML=(id==='oFiltT'?'<option value="__all__">Todas</option>':'<option value="">Selecione...</option>')+getCarriers().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if([...el.options].some(o=>o.value===cv))el.value=cv;});
+  renderSlaTable();renderSlaChart();
 }
 
-function setStatus(html){
-  document.getElementById('statusBox').innerHTML = html;
+function filtSla(){
+  const t=document.getElementById('sFiltT').value,a=document.getElementById('sFiltA').value;
+  return slaEntries.filter(e=>(t==='__all__'||e.transportadora===t)&&(a==='__all__'||String(e.ano)===a));
 }
 
-function getCarriers(){
-  return [...new Set([...DEFAULT_CARRIERS, ...customCarriers, ...entries.map(e => e.transportadora)])].sort((a,b)=>a.localeCompare(b));
-}
-function getYears(){
-  return [...new Set(entries.map(e => e.ano))].sort((a,b)=>a-b);
-}
-
-function renderAll(){
-  renderDatalist();
-  renderCarrierTags();
-  renderFilters();
-  renderTable();
-  renderChart();
-}
-
-function renderCarrierTags(){
-  const box = document.getElementById('carrierTags');
-  const removable = customCarriers.slice().sort((a,b)=>a.localeCompare(b));
-  if(removable.length === 0){
-    box.innerHTML = '';
-    return;
-  }
-  box.innerHTML = removable.map(c => `
-    <span class="carrier-tag">${escapeHtml(c)}<button title="Remover transportadora" onclick="removeCarrier('${escapeHtml(c).replace(/'/g,"\\'")}')">&times;</button></span>
-  `).join('');
-}
-
-async function removeCarrier(name){
-  try{
-    const { error } = await sb.from('sla_carriers').delete().eq('nome', name);
-    if(error) throw error;
-    customCarriers = customCarriers.filter(c => c !== name);
-    renderAll();
-    setStatus(`<b>●</b> transportadora removida · visível a todos`);
-  }catch(e){
-    setStatus('⚠ erro ao remover transportadora');
-  }
-}
-
-function renderDatalist(){
-  const dl = document.getElementById('dlTransp');
-  dl.innerHTML = getCarriers().map(c => `<option value="${escapeHtml(c)}">`).join('');
-}
-
-function renderFilters(){
-  const fT = document.getElementById('filterTransp');
-  const fA = document.getElementById('filterAno');
-  const curT = fT.value, curA = fA.value;
-
-  fT.innerHTML = '<option value="__all__">Todas</option>' +
-    getCarriers().map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  fA.innerHTML = '<option value="__all__">Todos</option>' +
-    getYears().map(y => `<option value="${y}">${y}</option>`).join('');
-
-  if([...fT.options].some(o=>o.value===curT)) fT.value = curT;
-  if([...fA.options].some(o=>o.value===curA)) fA.value = curA;
-}
-
-function filteredEntries(){
-  const t = document.getElementById('filterTransp').value;
-  const a = document.getElementById('filterAno').value;
-  return entries.filter(e =>
-    (t === '__all__' || e.transportadora === t) &&
-    (a === '__all__' || String(e.ano) === a)
-  );
-}
-
-function renderTable(){
-  const body = document.getElementById('tableBody');
-  const rows = [...filteredEntries()].sort((x,y)=> y.ano - x.ano || y.mes - x.mes || x.transportadora.localeCompare(y.transportadora));
-  if(rows.length === 0){
-    body.innerHTML = '<tr><td colspan="4" class="empty">Nenhum registro ainda. Adicione o primeiro SLA ao lado.</td></tr>';
-    return;
-  }
-  body.innerHTML = rows.map(e => {
-    const belowTarget = e.sla < 95;
-    const gap = belowTarget ? (95 - e.sla).toFixed(1) : null;
-    const pctImpact = (belowTarget && e.totalNF > 0) ? (e.impactadas / e.totalNF * 100).toFixed(1) : null;
-    const justCell = belowTarget
-      ? `<span title="${escapeHtml(e.motivo || 'sem motivo informado')}">
-           <b>${e.impactadas ?? '—'}</b>/${e.totalNF ?? '—'} NFs impactadas
-           ${pctImpact !== null ? `· <span class="sla-bad">${pctImpact}%</span>` : ''}
-           <span style="color:var(--muted);"> (-${gap} pts vs meta)</span><br>
-           <span style="color:var(--muted); font-size:12px;">${escapeHtml(truncate(e.motivo, 42))}</span>
-         </span>`
-      : '<span style="color:var(--muted);">—</span>';
-    return `
-    <tr class="${e.id === editingId ? 'editing' : ''}">
-      <td>${escapeHtml(e.transportadora)}</td>
-      <td>${MESES[e.mes]}/${e.ano}</td>
-      <td class="sla-val ${e.sla >= 95 ? 'sla-good' : 'sla-bad'}">${e.sla.toFixed(1)}%</td>
-      <td>${justCell}</td>
-      <td class="row-actions">
-        <button class="btn-ghost" onclick="editEntry('${e.id}')">Editar</button>
-        <button class="btn-ghost" onclick="removeEntry('${e.id}')">Excluir</button>
-      </td>
-    </tr>`;
+function renderSlaTable(){
+  const body=document.getElementById('sTableBody');
+  const rows=[...filtSla()].sort((x,y)=>y.ano-x.ano||y.mes-x.mes||x.transportadora.localeCompare(y.transportadora));
+  if(!rows.length){body.innerHTML='<tr><td colspan="5" class="empty">Nenhum registro. Adicione o primeiro SLA ao lado.</td></tr>';return;}
+  body.innerHTML=rows.map(e=>{
+    const bad=e.sla<95;const gap=bad?(95-e.sla).toFixed(1):null;
+    const pct=(bad&&e.totalNF>0)?(e.impactadas/e.totalNF*100).toFixed(1):null;
+    const jc=bad?`<span title="${esc(e.motivo||'')}"><b>${e.impactadas??'-'}</b>/${e.totalNF??'-'} NFs${pct?` &middot; <span style="color:var(--red)">${pct}%</span>`:''} <span style="color:var(--muted)">(-${gap} pts)</span><br><small style="color:var(--muted)">${esc((e.motivo||'').slice(0,40))}</small></span>`:'<span style="color:var(--muted)">&mdash;</span>';
+    return`<tr class="${e.id===sEditId?'editing':''}"><td>${esc(e.transportadora)}</td><td>${MESES[e.mes]}/${e.ano}</td><td class="${e.sla>=95?'sla-good':'sla-bad'}">${e.sla.toFixed(1)}%</td><td>${jc}</td><td class="row-actions"><button class="btn btn-ghost" onclick="sEdit('${e.id}')">Editar</button><button class="btn btn-ghost" onclick="sDel('${e.id}')">Excluir</button></td></tr>`;
   }).join('');
 }
 
-function truncate(s, n){
-  if(!s) return 'sem motivo informado';
-  return s.length > n ? s.slice(0, n) + '…' : s;
+function renderSlaChart(){
+  const data=filtSla();const carriers=[...new Set(data.map(e=>e.transportadora))].sort((a,b)=>a.localeCompare(b));
+  const ks=new Set(data.map(e=>`${e.ano}-${String(e.mes).padStart(2,'0')}`));const labels=[...ks].sort();
+  const ds=carriers.map((c,i)=>{const bk={};data.filter(e=>e.transportadora===c).forEach(e=>{bk[`${e.ano}-${String(e.mes).padStart(2,'0')}`]=e.sla;});return{label:c,data:labels.map(k=>bk[k]??null),borderColor:PAL[i%PAL.length],backgroundColor:PAL[i%PAL.length],spanGaps:true,tension:.3,pointRadius:3,borderWidth:2};});
+  ds.push({label:'Meta (95%)',data:labels.map(()=>95),borderColor:'rgba(124,138,165,.5)',borderDash:[6,4],pointRadius:0,borderWidth:1.5});
+  const dispL=labels.map(k=>{const[y,m]=k.split('-');return`${MESES[parseInt(m,10)]}/${y.slice(2)}`;});
+  const ctx=document.getElementById('slaChart').getContext('2d');
+  if(slaChart)slaChart.destroy();
+  if(!labels.length)return;
+  slaChart=new Chart(ctx,{type:'line',data:{labels:dispL,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#E6ECF5',font:{family:'Inter',size:11}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.formattedValue}%`}}},scales:{x:{ticks:{color:'#7C8AA5'},grid:{color:'rgba(36,52,79,.6)'}},y:{min:0,max:100,ticks:{color:'#7C8AA5',callback:v=>v+'%'},grid:{color:'rgba(36,52,79,.6)'}}}}});
 }
 
-function renderChart(){
-  const box = document.querySelector('.chart-box');
-  if(typeof Chart === 'undefined'){
-    box.innerHTML = '<p style="color:var(--red); font-family:JetBrains Mono, monospace; font-size:12px; padding:20px;">⚠ Não foi possível carregar a biblioteca do gráfico (sem conexão?). Atualize a página para tentar novamente.</p>';
-    return;
-  }
-  if(!document.getElementById('slaChart')){
-    box.innerHTML = '<canvas id="slaChart"></canvas>';
-  }
+/* SLA CRUD */
+document.getElementById('sInpSla').addEventListener('input',()=>{
+  const s=parseFloat(document.getElementById('sInpSla').value);
+  const box=document.getElementById('justifyBox'),w=document.getElementById('gapWarn');
+  if(!isNaN(s)&&s<95){box.style.display='block';w.textContent=`\u26a0 ${(95-s).toFixed(1)} pts abaixo da meta \u2014 justifique`;}
+  else box.style.display='none';
+});
+document.getElementById('sInpTotalNF').addEventListener('input',updPrev);
+document.getElementById('sInpImpact').addEventListener('input',updPrev);
+function updPrev(){const t=parseInt(document.getElementById('sInpTotalNF').value,10),i=parseInt(document.getElementById('sInpImpact').value,10),p=document.getElementById('impactPrev');p.textContent=(!isNaN(t)&&t>0&&!isNaN(i))?`\u2192 ${(i/t*100).toFixed(1)}% do total de NFs`:''}
 
-  const data = filteredEntries();
-  const carriers = [...new Set(data.map(e => e.transportadora))].sort((a,b)=>a.localeCompare(b));
-
-  const keySet = new Set(data.map(e => `${e.ano}-${String(e.mes).padStart(2,'0')}`));
-  const labels = [...keySet].sort();
-
-  const datasets = carriers.map((c, i) => {
-    const byKey = {};
-    data.filter(e => e.transportadora === c).forEach(e => {
-      byKey[`${e.ano}-${String(e.mes).padStart(2,'0')}`] = e.sla;
-    });
-    return {
-      label: c,
-      data: labels.map(k => byKey[k] ?? null),
-      borderColor: PALETTE[i % PALETTE.length],
-      backgroundColor: PALETTE[i % PALETTE.length],
-      spanGaps: true,
-      tension: 0.3,
-      pointRadius: 3,
-      borderWidth: 2,
-    };
-  });
-
-  datasets.push({
-    label: 'Meta (95%)',
-    data: labels.map(()=>95),
-    borderColor: 'rgba(124,138,165,0.55)',
-    borderDash: [6,4],
-    pointRadius: 0,
-    borderWidth: 1.5,
-  });
-
-  const displayLabels = labels.map(k => {
-    const [y,m] = k.split('-');
-    return `${MESES[parseInt(m,10)]}/${y.slice(2)}`;
-  });
-
-  const ctx = document.getElementById('slaChart').getContext('2d');
-  if(chart) chart.destroy();
-
-  if(labels.length === 0){
-    return;
-  }
-
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: displayLabels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { labels: { color: '#E6ECF5', font: { family: 'Inter', size: 11 } } },
-        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.formattedValue}%` } }
-      },
-      scales: {
-        x: { ticks: { color: '#7C8AA5' }, grid: { color: 'rgba(36,52,79,0.6)' } },
-        y: { min: 0, max: 100, ticks: { color: '#7C8AA5', callback: v => v + '%' }, grid: { color: 'rgba(36,52,79,0.6)' } }
-      }
-    }
-  });
-}
-
-async function removeEntry(id){
+document.getElementById('sBtnAdd').addEventListener('click',async()=>{
+  const transp=document.getElementById('sInpTransp').value.trim();
+  const ano=parseInt(document.getElementById('sInpAno').value,10);
+  const mes=parseInt(document.getElementById('sInpMes').value,10);
+  const sla=parseFloat(document.getElementById('sInpSla').value);
+  const bad=!isNaN(sla)&&sla<95;
+  const totalNF=bad?parseInt(document.getElementById('sInpTotalNF').value,10):null;
+  const impactadas=bad?parseInt(document.getElementById('sInpImpact').value,10):null;
+  const motivo=bad?document.getElementById('sInpMotivo').value.trim():null;
+  if(!transp){alert('Informe a transportadora.');return;}
+  if(!ano||ano<2000){alert('Ano inv\u00e1lido.');return;}
+  if(isNaN(sla)||sla<0||sla>100){alert('SLA entre 0 e 100.');return;}
+  if(bad&&(isNaN(totalNF)||totalNF<=0)){alert('Informe o total de NFs.');return;}
+  if(bad&&(isNaN(impactadas)||impactadas<0)){alert('Informe as NFs impactadas.');return;}
+  if(bad&&impactadas>totalNF){alert('Impactadas > total.');return;}
+  if(bad&&!motivo){alert('Informe o motivo.');return;}
+  const payload={transportadora:transp,ano,mes,sla,total_nf:totalNF,impactadas,motivo};
   try{
-    const { error } = await sb.from('sla_entries').delete().eq('id', id);
-    if(error) throw error;
-    entries = entries.filter(e => e.id !== id);
-    if(editingId === id) cancelEdit();
-    renderAll();
-    setStatus(`<b>●</b> registro excluído · ${entries.length} registro(s)`);
-  }catch(e){
-    setStatus('⚠ erro ao excluir registro');
-  }
-}
-
-function editEntry(id){
-  const e = entries.find(x => x.id === id);
-  if(!e) return;
-  editingId = id;
-  document.getElementById('inpTransp').value = e.transportadora;
-  document.getElementById('inpAno').value = e.ano;
-  document.getElementById('inpMes').value = e.mes;
-  document.getElementById('inpSla').value = e.sla;
-  document.getElementById('inpTotalNF').value = e.totalNF ?? '';
-  document.getElementById('inpImpactadas').value = e.impactadas ?? '';
-  document.getElementById('inpMotivo').value = e.motivo ?? '';
-  updateJustifyVisibility();
-  updateImpactPreview();
-  document.getElementById('btnAdd').textContent = '✓ Salvar alterações';
-  document.getElementById('btnCancelEdit').style.display = 'block';
-  renderTable();
-  document.getElementById('inpTransp').scrollIntoView({behavior:'smooth', block:'center'});
-}
-
-function cancelEdit(){
-  editingId = null;
-  document.getElementById('inpTransp').value = '';
-  document.getElementById('inpAno').value = '';
-  document.getElementById('inpMes').value = '1';
-  document.getElementById('inpSla').value = '';
-  document.getElementById('inpTotalNF').value = '';
-  document.getElementById('inpImpactadas').value = '';
-  document.getElementById('inpMotivo').value = '';
-  updateJustifyVisibility();
-  updateImpactPreview();
-  document.getElementById('btnAdd').textContent = '+ Adicionar registro';
-  document.getElementById('btnCancelEdit').style.display = 'none';
-  renderTable();
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-document.getElementById('inpSla').addEventListener('input', updateJustifyVisibility);
-document.getElementById('inpTotalNF').addEventListener('input', updateImpactPreview);
-document.getElementById('inpImpactadas').addEventListener('input', updateImpactPreview);
-
-function updateImpactPreview(){
-  const total = parseInt(document.getElementById('inpTotalNF').value, 10);
-  const imp = parseInt(document.getElementById('inpImpactadas').value, 10);
-  const preview = document.getElementById('impactPreview');
-  if(!isNaN(total) && total > 0 && !isNaN(imp)){
-    const pct = (imp / total * 100).toFixed(1);
-    preview.textContent = `→ representa ${pct}% do total de notas fiscais do mês`;
-  } else {
-    preview.textContent = '';
-  }
-}
-
-function updateJustifyVisibility(){
-  const sla = parseFloat(document.getElementById('inpSla').value);
-  const box = document.getElementById('justifyBox');
-  const warn = document.getElementById('gapWarning');
-  if(!isNaN(sla) && sla < 95){
-    box.style.display = 'block';
-    warn.textContent = `⚠ ${(95 - sla).toFixed(1)} pts abaixo da meta — justifique abaixo`;
-  } else {
-    box.style.display = 'none';
-  }
-}
-
-document.getElementById('btnAdd').addEventListener('click', async () => {
-  const transp = document.getElementById('inpTransp').value.trim();
-  const ano = parseInt(document.getElementById('inpAno').value, 10);
-  const mes = parseInt(document.getElementById('inpMes').value, 10);
-  const sla = parseFloat(document.getElementById('inpSla').value);
-  const belowTarget = !isNaN(sla) && sla < 95;
-  const totalNF = belowTarget ? parseInt(document.getElementById('inpTotalNF').value, 10) : null;
-  const impactadas = belowTarget ? parseInt(document.getElementById('inpImpactadas').value, 10) : null;
-  const motivo = belowTarget ? document.getElementById('inpMotivo').value.trim() : null;
-
-  if(!transp){ alert('Informe o nome da transportadora.'); return; }
-  if(!ano || ano < 2000){ alert('Informe um ano válido.'); return; }
-  if(isNaN(sla) || sla < 0 || sla > 100){ alert('Informe um SLA entre 0 e 100.'); return; }
-  if(belowTarget && (isNaN(totalNF) || totalNF <= 0)){ alert('Informe o total de notas fiscais do mês.'); return; }
-  if(belowTarget && (isNaN(impactadas) || impactadas < 0)){ alert('Informe a quantidade de notas fiscais impactadas.'); return; }
-  if(belowTarget && impactadas > totalNF){ alert('A quantidade impactada não pode ser maior que o total de notas.'); return; }
-  if(belowTarget && !motivo){ alert('Informe o motivo da queda no SLA.'); return; }
-
-  const payload = {
-    transportadora: transp, ano, mes, sla,
-    total_nf: totalNF, impactadas, motivo
-  };
-
-  try{
-    if(editingId){
-      const { data, error } = await sb.from('sla_entries').update(payload).eq('id', editingId).select().single();
-      if(error) throw error;
-      const idx = entries.findIndex(x => x.id === editingId);
-      if(idx !== -1) entries[idx] = dbToEntry(data);
-      cancelEdit();
-      setStatus(`<b>●</b> registro atualizado · visível a todos`);
-    } else {
-      const { data, error } = await sb.from('sla_entries').insert(payload).select().single();
-      if(error) throw error;
-      entries.push(dbToEntry(data));
-      document.getElementById('inpSla').value = '';
-      document.getElementById('inpTotalNF').value = '';
-      document.getElementById('inpImpactadas').value = '';
-      document.getElementById('inpMotivo').value = '';
-      updateJustifyVisibility();
-      setStatus(`<b>●</b> salvo · ${entries.length} registro(s) · visível a todos`);
-    }
-    renderAll();
-  }catch(e){
-    setStatus('⚠ erro ao salvar dados');
-  }
+    if(sEditId){const{data,error}=await sb.from('sla_entries').update(payload).eq('id',sEditId).select().single();if(error)throw error;const ix=slaEntries.findIndex(x=>x.id===sEditId);if(ix>-1)slaEntries[ix]=t2s(data);sCancelEdit();}
+    else{const{data,error}=await sb.from('sla_entries').insert(payload).select().single();if(error)throw error;slaEntries.unshift(t2s(data));['sInpSla','sInpTotalNF','sInpImpact','sInpMotivo'].forEach(id=>document.getElementById(id).value='');document.getElementById('justifyBox').style.display='none';}
+    renderAll();st(`<b>&#9679;</b> salvo &middot; ${slaEntries.length} registros`);
+  }catch(e){st('\u26a0 Erro ao salvar');}
 });
 
-document.getElementById('btnCancelEdit').addEventListener('click', cancelEdit);
+function sEdit(id){const e=slaEntries.find(x=>x.id===id);if(!e)return;sEditId=id;document.getElementById('sInpTransp').value=e.transportadora;document.getElementById('sInpAno').value=e.ano;document.getElementById('sInpMes').value=e.mes;document.getElementById('sInpSla').value=e.sla;document.getElementById('sInpTotalNF').value=e.totalNF??'';document.getElementById('sInpImpact').value=e.impactadas??'';document.getElementById('sInpMotivo').value=e.motivo??'';if(e.sla<95){document.getElementById('justifyBox').style.display='block';document.getElementById('gapWarn').textContent=`\u26a0 ${(95-e.sla).toFixed(1)} pts abaixo da meta`;}updPrev();document.getElementById('sBtnAdd').textContent='\u2713 Salvar altera\u00e7\u00f5es';document.getElementById('sBtnCancel').style.display='block';renderSlaTable();}
+function sCancelEdit(){sEditId=null;['sInpTransp','sInpAno','sInpSla','sInpTotalNF','sInpImpact','sInpMotivo'].forEach(id=>document.getElementById(id).value='');document.getElementById('sInpMes').value='1';document.getElementById('justifyBox').style.display='none';document.getElementById('sBtnAdd').textContent='+ Adicionar registro';document.getElementById('sBtnCancel').style.display='none';renderSlaTable();}
+document.getElementById('sBtnCancel').addEventListener('click',sCancelEdit);
+async function sDel(id){try{await sb.from('sla_entries').delete().eq('id',id);slaEntries=slaEntries.filter(e=>e.id!==id);if(sEditId===id)sCancelEdit();renderAll();}catch(e){st('\u26a0 Erro ao excluir');}}
 
-document.getElementById('btnAddCarrier').addEventListener('click', async () => {
-  const input = document.getElementById('inpNovaTransp');
-  const name = input.value.trim();
-  if(!name){ return; }
-  if(getCarriers().some(c => c.toLowerCase() === name.toLowerCase())){
-    alert('Essa transportadora já está cadastrada.');
-    return;
-  }
+document.getElementById('sBtnAddCarrier').addEventListener('click',async()=>{const i=document.getElementById('sInpNova');const n=i.value.trim();if(!n)return;if(getCarriers().some(c=>c.toLowerCase()===n.toLowerCase())){alert('J\u00e1 cadastrada.');return;}try{await sb.from('sla_carriers').insert({nome:n});customCarriers.push(n);i.value='';renderAll();}catch(e){st('\u26a0 Erro ao cadastrar');}});
+async function rmCarrier(n){try{await sb.from('sla_carriers').delete().eq('nome',n);customCarriers=customCarriers.filter(c=>c!==n);renderAll();}catch(e){}}
+
+document.getElementById('sFiltT').addEventListener('change',()=>{renderSlaTable();renderSlaChart();});
+document.getElementById('sFiltA').addEventListener('change',()=>{renderSlaTable();renderSlaChart();});
+
+/* ===== OCORRENCIAS ===== */
+function filtOc(){
+  const t=document.getElementById('oFiltT').value,tp=document.getElementById('oFiltTipo').value,s=document.getElementById('oFiltStatus').value;
+  return ocorrencias.filter(o=>(t==='__all__'||o.transportadora===t)&&(tp==='__all__'||o.tipo===tp)&&(s==='__all__'||o.status===s));
+}
+
+function renderOC(){
+  renderOcStats();renderOcTable();renderOcChart();
+}
+
+function renderOcStats(){
+  const filtered=ocorrencias;
+  const tipos=['Atraso','Avaria','Extravio','Cliente Ausente','Recusa','Agendamento'];
+  const total=filtered.length;const abertas=filtered.filter(o=>o.status==='Aberta').length;
+  document.getElementById('ocStats').innerHTML=`
+    <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">${total}</div><div class="stat-lbl">Total</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--red)">${abertas}</div><div class="stat-lbl">Em Aberto</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)">${total-abertas}</div><div class="stat-lbl">Resolvidas</div></div>
+    ${tipos.map(tp=>`<div class="stat-card"><div class="stat-val" style="color:${OC_PAL[tp]}">${filtered.filter(o=>o.tipo===tp).length}</div><div class="stat-lbl">${tp}</div></div>`).join('')}
+  `;
+}
+
+function renderOcTable(){
+  const body=document.getElementById('oTableBody');
+  const rows=filtOc();
+  if(!rows.length){body.innerHTML='<tr><td colspan="7" class="empty">Nenhuma ocorr\u00eancia registrada.</td></tr>';return;}
+  body.innerHTML=rows.map(o=>`<tr class="${o.id===oEditId?'editing':''}">
+    <td>${esc(o.transportadora)}</td>
+    <td>${o.data?o.data.split('-').reverse().join('/'):'—'}</td>
+    <td><span class="badge-tipo">${esc(o.tipo)}</span></td>
+    <td>${esc(o.nf||'—')}</td>
+    <td><span title="${esc(o.desc||'')}">${esc((o.desc||'').slice(0,40))}${(o.desc||'').length>40?'…':''}</span></td>
+    <td><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></td>
+    <td class="row-actions"><button class="btn btn-ghost" onclick="oEdit('${o.id}')">Editar</button><button class="btn btn-ghost" onclick="oDel('${o.id}')">Excluir</button></td>
+  </tr>`).join('');
+}
+
+function renderOcChart(){
+  const tipos=['Atraso','Avaria','Extravio','Cliente Ausente','Recusa','Agendamento'];
+  const filtered=filtOc();
+  const counts=tipos.map(tp=>filtered.filter(o=>o.tipo===tp).length);
+  const ctx=document.getElementById('ocChart').getContext('2d');
+  if(ocChart)ocChart.destroy();
+  ocChart=new Chart(ctx,{type:'bar',data:{labels:tipos,datasets:[{data:counts,backgroundColor:tipos.map(t=>OC_PAL[t]+'99'),borderColor:tipos.map(t=>OC_PAL[t]),borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7C8AA5',font:{size:11}},grid:{color:'rgba(36,52,79,.4)'}},y:{ticks:{color:'#7C8AA5',stepSize:1},grid:{color:'rgba(36,52,79,.6)'}}}}});
+}
+
+document.getElementById('oBtnAdd').addEventListener('click',async()=>{
+  const transp=document.getElementById('oInpTransp').value;const data=document.getElementById('oInpData').value;
+  const tipo=document.getElementById('oInpTipo').value;const nf=document.getElementById('oInpNF').value.trim();
+  const desc=document.getElementById('oInpDesc').value.trim();const status=document.getElementById('oInpStatus').value;
+  if(!transp){alert('Selecione a transportadora.');return;}
+  if(!data){alert('Informe a data.');return;}
+  if(!tipo){alert('Selecione o tipo.');return;}
+  const payload={transportadora:transp,data_ocorrencia:data,tipo,numero_nf:nf||null,descricao:desc||null,status};
   try{
-    const { error } = await sb.from('sla_carriers').insert({ nome: name });
-    if(error) throw error;
-    customCarriers.push(name);
-    input.value = '';
-    renderAll();
-    setStatus(`<b>●</b> transportadora cadastrada · visível a todos`);
-  }catch(e){
-    setStatus('⚠ erro ao cadastrar transportadora');
-  }
+    if(oEditId){const{data:d,error}=await sb.from('ocorrencias').update(payload).eq('id',oEditId).select().single();if(error)throw error;const ix=ocorrencias.findIndex(x=>x.id===oEditId);if(ix>-1)ocorrencias[ix]=o2s(d);oCancelEdit();}
+    else{const{data:d,error}=await sb.from('ocorrencias').insert(payload).select().single();if(error)throw error;ocorrencias.unshift(o2s(d));['oInpNF','oInpDesc'].forEach(id=>document.getElementById(id).value='');document.getElementById('oInpTipo').value='';document.getElementById('oInpStatus').value='Aberta';}
+    renderAll();st(`<b>&#9679;</b> salvo &middot; ${ocorrencias.length} ocorr\u00eancias`);
+  }catch(e){st('\u26a0 Erro ao salvar');}
 });
 
-document.getElementById('inpNovaTransp').addEventListener('keydown', (e) => {
-  if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('btnAddCarrier').click(); }
-});
+function oEdit(id){const o=ocorrencias.find(x=>x.id===id);if(!o)return;oEditId=id;document.getElementById('oInpTransp').value=o.transportadora;document.getElementById('oInpData').value=o.data||'';document.getElementById('oInpTipo').value=o.tipo;document.getElementById('oInpNF').value=o.nf||'';document.getElementById('oInpDesc').value=o.desc||'';document.getElementById('oInpStatus').value=o.status;document.getElementById('oBtnAdd').textContent='\u2713 Salvar altera\u00e7\u00f5es';document.getElementById('oBtnCancel').style.display='block';renderOcTable();}
+function oCancelEdit(){oEditId=null;['oInpNF','oInpDesc'].forEach(id=>document.getElementById(id).value='');document.getElementById('oInpTransp').value='';document.getElementById('oInpTipo').value='';document.getElementById('oInpStatus').value='Aberta';document.getElementById('oBtnAdd').textContent='+ Registrar ocorr\u00eancia';document.getElementById('oBtnCancel').style.display='none';renderOcTable();}
+document.getElementById('oBtnCancel').addEventListener('click',oCancelEdit);
+async function oDel(id){try{await sb.from('ocorrencias').delete().eq('id',id);ocorrencias=ocorrencias.filter(o=>o.id!==id);if(oEditId===id)oCancelEdit();renderAll();}catch(e){}}
 
-document.getElementById('filterTransp').addEventListener('change', () => { renderTable(); renderChart(); });
-document.getElementById('filterAno').addEventListener('change', () => { renderTable(); renderChart(); });
+['oFiltT','oFiltTipo','oFiltStatus'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{renderOcTable();renderOcChart();}));
 
-loadData();
+/* ===== PAINEL ===== */
+function filtPainel(){
+  const m=document.getElementById('pFiltMes').value,a=document.getElementById('pFiltAno').value;
+  const sla=slaEntries.filter(e=>(m==='__all__'||String(e.mes)===m)&&(a==='__all__'||String(e.ano)===a));
+  const oc=ocorrencias.filter(o=>{if(!o.data)return false;const[y,mo]=o.data.split('-');return(m==='__all__'||mo===m.padStart(2,'0'))&&(a==='__all__'||y===a);});
+  return{sla,oc};
+}
+
+function renderPainel(){
+  const{sla,oc}=filtPainel();
+  const mes=document.getElementById('pFiltMes').value,ano=document.getElementById('pFiltAno').value;
+  document.getElementById('painelMonth').textContent=(mes==='__all__'?'Todos os meses':MESN[parseInt(mes,10)])+' '+(ano==='__all__'?'':ano);
+
+  // stats
+  const avgSla=sla.length?(sla.reduce((s,e)=>s+e.sla,0)/sla.length).toFixed(1):'-';
+  const abaixoMeta=sla.filter(e=>e.sla<95).length;
+  document.getElementById('painelStats').innerHTML=`
+    <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">${avgSla}${avgSla!=='-'?'%':''}</div><div class="stat-lbl">M\u00e9dia SLA</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--red)">${abaixoMeta}</div><div class="stat-lbl">Abaixo da meta</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${oc.length}</div><div class="stat-lbl">Ocorr\u00eancias</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--red)">${oc.filter(o=>o.status==='Aberta').length}</div><div class="stat-lbl">Em Aberto</div></div>
+  `;
+
+  // ranking SLA
+  const carriers=getCarriers();
+  const slaByCarrier=carriers.map(c=>{const es=sla.filter(e=>e.transportadora===c);if(!es.length)return null;const avg=es.reduce((s,e)=>s+e.sla,0)/es.length;return{name:c,val:avg};}).filter(Boolean).sort((a,b)=>b.val-a.val);
+  document.getElementById('rankingSLA').innerHTML=slaByCarrier.length?slaByCarrier.map((r,i)=>`<div class="rank-item"><span class="rank-num">${i+1}</span><span class="rank-name">${esc(r.name)}</span><span class="rank-val" style="color:${r.val>=95?'var(--green)':'var(--red)'}">${r.val.toFixed(1)}%</span></div>`).join(''):'<div class="empty">Sem dados</div>';
+
+  // oc por tipo chips
+  const tipos=['Atraso','Avaria','Extravio','Cliente Ausente','Recusa','Agendamento'];
+  document.getElementById('painelOcTipos').innerHTML=tipos.map(tp=>{const n=oc.filter(o=>o.tipo===tp).length;return`<span class="oc-chip" style="background:${OC_PAL[tp]}22;color:${OC_PAL[tp]}">${tp}: ${n}</span>`;}).join('');
+
+  // oc bar chart
+  const ocCtx=document.getElementById('painelOcChart').getContext('2d');
+  if(pOcChart)pOcChart.destroy();
+  pOcChart=new Chart(ocCtx,{type:'doughnut',data:{labels:tipos,datasets:[{data:tipos.map(tp=>oc.filter(o=>o.tipo===tp).length),backgroundColor:tipos.map(t=>OC_PAL[t]+'bb'),borderColor:tipos.map(t=>OC_PAL[t]),borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#E6ECF5',font:{size:11}},position:'bottom'}}}});
+
+  // sla evol chart
+  const slaCtx=document.getElementById('painelSlaChart').getContext('2d');
+  if(pSlaChart)pSlaChart.destroy();
+  const ks=new Set(slaEntries.map(e=>`${e.ano}-${String(e.mes).padStart(2,'0')}`));const labels=[...ks].sort().slice(-12);
+  const topCarriers=slaByCarrier.slice(0,4).map(r=>r.name);
+  const ds=topCarriers.map((c,i)=>{const bk={};slaEntries.filter(e=>e.transportadora===c).forEach(e=>{bk[`${e.ano}-${String(e.mes).padStart(2,'0')}`]=e.sla;});return{label:c,data:labels.map(k=>bk[k]??null),borderColor:PAL[i%PAL.length],backgroundColor:PAL[i%PAL.length],spanGaps:true,tension:.3,pointRadius:3,borderWidth:2};});
+  ds.push({label:'Meta 95%',data:labels.map(()=>95),borderColor:'rgba(124,138,165,.5)',borderDash:[6,4],pointRadius:0,borderWidth:1.5});
+  const dispL=labels.map(k=>{const[y,m]=k.split('-');return`${MESES[parseInt(m,10)]}/${y.slice(2)}`;});
+  if(labels.length)pSlaChart=new Chart(slaCtx,{type:'line',data:{labels:dispL,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#E6ECF5',font:{size:10}},position:'bottom'}},scales:{x:{ticks:{color:'#7C8AA5',font:{size:10}},grid:{color:'rgba(36,52,79,.5)'}},y:{min:0,max:100,ticks:{color:'#7C8AA5',callback:v=>v+'%',font:{size:10}},grid:{color:'rgba(36,52,79,.6)'}}}}});
+
+  // ranking oc
+  const ocByCarrier=carriers.map(c=>{const n=oc.filter(o=>o.transportadora===c).length;return{name:c,val:n};}).filter(r=>r.val>0).sort((a,b)=>b.val-a.val);
+  document.getElementById('rankingOc').innerHTML=ocByCarrier.length?ocByCarrier.map((r,i)=>`<div class="rank-item"><span class="rank-num">${i+1}</span><span class="rank-name">${esc(r.name)}</span><span class="rank-val" style="color:var(--amber)">${r.val}</span></div>`).join(''):'<div class="empty">Nenhuma ocorr\u00eancia</div>';
+}
+
+['pFiltMes','pFiltAno'].forEach(id=>document.getElementById(id).addEventListener('change',renderPainel));
+
+/* PAGE SWITCH */
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='painel')renderPainel();
+}
+
+// set today as default date
+document.getElementById('oInpData').value=new Date().toISOString().split('T')[0];
+
+loadAll();
 </script>
 </body>
 </html>

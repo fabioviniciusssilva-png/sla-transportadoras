@@ -266,7 +266,10 @@ tr.editing td{background:rgba(245,166,35,.06)}
   </div>
 
   <div class="panel" style="margin-top:20px;padding:20px">
-    <div class="panel-title"><span class="dot amber"></span>Lista de Ocorr&#234;ncias</div>
+    <div class="panel-title" style="justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:8px"><span class="dot amber"></span>Lista de Ocorr&#234;ncias</span>
+      <button class="btn btn-ghost" onclick="clearAllOc()" style="color:var(--red);border-color:var(--red);font-size:11px">&#128465; Limpar tudo</button>
+    </div>
     <div class="tscroll">
       <table><thead><tr><th>Transportadora</th><th>Data</th><th>Tipo</th><th>NF</th><th>Descri&#231;&#227;o</th><th>Status</th><th></th></tr></thead>
       <tbody id="oTableBody"></tbody></table>
@@ -656,6 +659,17 @@ document.getElementById('xlsxInput').addEventListener('change',async function(){
     this.value='';
   }catch(e){imp.style.color='var(--red)';imp.textContent='\u26a0 Erro ao ler o arquivo: '+e.message;}
 });
+
+async function clearAllOc(){
+  const total=ocorrencias.length;
+  if(!total){alert('Nenhuma ocorr\u00eancia para limpar.');return;}
+  if(!confirm(`Tem certeza que deseja excluir TODAS as ${total} ocorr\u00eancia(s)? Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita.`))return;
+  try{
+    await sb.from('ocorrencias').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    ocorrencias=[];renderAll();
+    st('<b>&#9679;</b> Todas as ocorr\u00eancias foram removidas');
+  }catch(e){st('\u26a0 Erro ao limpar ocorr\u00eancias');}
+}
 
 loadAll();
 </script>

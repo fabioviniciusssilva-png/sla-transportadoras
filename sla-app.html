@@ -587,17 +587,14 @@ document.getElementById('oInpData').value=new Date().toISOString().split('T')[0]
 /* ===== EXCEL IMPORT ===== */
 function detectTipo(motivo){
   if(!motivo)return'Atraso';
-  const m=motivo.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  if(m.includes('agen'))return'Agendamento';
-  if(m.includes('imposto')||m.includes('fiscal')||m.includes('sefaz')||m.includes('reten')||m==='imposto')return'Imposto';
-  if(m.includes('sinist'))return'Sinistro';
-  if(m.includes('extravi')||m.includes('perda'))return'Extravio';
-  if(m.includes('tratativ')||m.includes('pos venda')||m.includes('venda'))return'Tratativa Pós Venda';
-  if(m.includes('atraso'))return'Atraso';
-  // direct match - if motivo IS the type name, use it directly
-  const tipos=['Imposto','Extravio','Tratativa Pós Venda','Agendamento','Atraso','Sinistro'];
-  const direct=tipos.find(t=>t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')===m);
-  if(direct)return direct;
+  const m=motivo.trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  // exact/contains match by keywords
+  if(m==='IMPOSTO'||m.includes('IMPOSTO')||m.includes('FISCAL')||m.includes('SEFAZ')||m.includes('RETENCAO')||m.includes('RETEN'))return'Imposto';
+  if(m==='SINISTRO'||m.includes('SINIST')||m.includes('FURTO')||m.includes('ROUBO'))return'Sinistro';
+  if(m==='EXTRAVIO'||m.includes('EXTRAVI')||m.includes('PERDA'))return'Extravio';
+  if(m==='AGENDAMENTO'||m.includes('AGEND'))return'Agendamento';
+  if(m.includes('TRATATIVA')||m.includes('POS VENDA')||m.includes('POO VENDA'))return'Tratativa Pós Venda';
+  if(m==='ATRASO'||m.includes('ATRASO'))return'Atraso';
   return'Atraso';
 }
 
@@ -636,6 +633,7 @@ document.getElementById('xlsxInput').addEventListener('change',async function(){
     const colNF=findCol(firstRow,['notas','nota','nf','numero']);
     const colEmissao=findCol(firstRow,['emissao','emiss','data','entrega']);
     const colMotivo=findCol(firstRow,['motivo','atraso','ocorr']);
+    const colTipo=findCol(firstRow,['tipo']);
     if(!colTransp){imp.style.color='var(--red)';imp.textContent='\u26a0 Coluna "Transportadora" não encontrada.';return;}
     if(!colMotivo){imp.style.color='var(--red)';imp.textContent='\u26a0 Coluna "Motivo atraso" não encontrada.';return;}
     // filter rows with motivo preenchido
@@ -649,7 +647,10 @@ document.getElementById('xlsxInput').addEventListener('change',async function(){
       const dataRaw=colEmissao?row[colEmissao]:'';
       const data=excelDateToISO(dataRaw)||new Date().toISOString().split('T')[0];
       const motivo=String(row[colMotivo]||'').trim();
-      const tipo=detectTipo(motivo);
+      const tipoRaw=colTipo?String(row[colTipo]||'').trim():'';
+      const VALID_TIPOS=['Imposto','Extravio','Tratativa Pós Venda','Agendamento','Atraso','Sinistro'];
+      const tipoMatch=VALID_TIPOS.find(t=>t.toLowerCase()===tipoRaw.toLowerCase());
+      const tipo=tipoMatch||detectTipo(motivo);
       if(!transp||!motivo)continue;
       try{
         const{error}=await sb.from('ocorrencias').insert({transportadora:transp,data_ocorrencia:data,tipo,numero_nf:nf||null,descricao:motivo,status:'Aberta'});

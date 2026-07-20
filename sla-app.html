@@ -270,7 +270,19 @@ tr.editing td{background:rgba(245,166,35,.06)}
       <button class="btn btn-ghost" onclick="clearAllOc()" style="color:var(--red);border-color:var(--red);font-size:11px">&#128465; Limpar tudo</button>
     </div>
     <div class="tscroll">
-      <table><thead><tr><th>Transportadora</th><th>Data</th><th>Tipo</th><th>NF</th><th>Descri&#231;&#227;o</th><th>Status</th><th></th></tr></thead>
+      <table><thead>
+  <tr>
+    <th style="width:36px"><input type="checkbox" id="chkAll" title="Selecionar todos" style="width:auto;cursor:pointer"></th>
+    <th>Transportadora</th><th>Data</th><th>Tipo</th><th>NF</th><th>Descri&#231;&#227;o</th><th>Status</th><th></th>
+  </tr>
+  <tr id="bulkBar" style="display:none">
+    <td colspan="8" style="padding:8px 12px;background:rgba(41,216,216,.06);border-bottom:1px solid var(--line)">
+      <span id="bulkCount" style="color:var(--cyan);font-size:12px;margin-right:12px"></span>
+      <button class="btn" style="font-size:12px;padding:5px 12px;background:rgba(63,203,142,.15);color:var(--green);border:1px solid var(--green);margin-right:6px" onclick="bulkStatus('Resolvida')">&#10003; Marcar como Resolvida</button>
+      <button class="btn" style="font-size:12px;padding:5px 12px;background:rgba(240,97,109,.15);color:var(--red);border:1px solid var(--red)" onclick="bulkStatus('Aberta')">&#10007; Marcar como Aberta</button>
+    </td>
+  </tr>
+</thead>
       <tbody id="oTableBody"></tbody></table>
     </div>
   </div>
@@ -476,7 +488,8 @@ function renderOcTable(){
   const body=document.getElementById('oTableBody');
   const rows=filtOc();
   if(!rows.length){body.innerHTML='<tr><td colspan="7" class="empty">Nenhuma ocorr\u00eancia registrada.</td></tr>';return;}
-  body.innerHTML=rows.map(o=>`<tr class="${o.id===oEditId?'editing':''}">
+  body.innerHTML=rows.map(o=>`<tr class="${o.id===oEditId?'editing':''}" data-id="${o.id}">
+    <td><input type="checkbox" class="oc-chk" data-id="${o.id}" style="width:auto;cursor:pointer" onchange="updateBulkBar()"></td>
     <td>${esc(o.transportadora)}</td>
     <td>${o.data?o.data.split('-').reverse().join('/'):'—'}</td>
     <td><span class="badge-tipo">${esc(o.tipo)}</span></td>
@@ -663,6 +676,43 @@ document.getElementById('xlsxInput').addEventListener('change',async function(){
     this.value='';
   }catch(e){imp.style.color='var(--red)';imp.textContent='\u26a0 Erro ao ler o arquivo: '+e.message;}
 });
+
+// Bulk selection
+document.addEventListener('change',function(e){
+  if(e.target.id==='chkAll'){
+    document.querySelectorAll('.oc-chk').forEach(c=>c.checked=e.target.checked);
+    updateBulkBar();
+  }
+});
+
+function updateBulkBar(){
+  const checked=document.querySelectorAll('.oc-chk:checked');
+  const bar=document.getElementById('bulkBar');
+  const count=document.getElementById('bulkCount');
+  if(checked.length>0){
+    bar.style.display='';
+    count.textContent=`${checked.length} selecionada(s)`;
+  } else {
+    bar.style.display='none';
+    if(document.getElementById('chkAll'))document.getElementById('chkAll').checked=false;
+  }
+}
+
+async function bulkStatus(newStatus){
+  const checked=[...document.querySelectorAll('.oc-chk:checked')];
+  if(!checked.length)return;
+  const ids=checked.map(c=>c.dataset.id);
+  try{
+    for(const id of ids){
+      await sb.from('ocorrencias').update({status:newStatus}).eq('id',id);
+      const o=ocorrencias.find(x=>x.id===id);
+      if(o)o.status=newStatus;
+    }
+    renderOC();
+    if(document.getElementById('chkAll'))document.getElementById('chkAll').checked=false;
+    st(`<b>&#9679;</b> ${ids.length} ocorrência(s) marcada(s) como ${newStatus}`);
+  }catch(e){st('⚠ Erro ao atualizar status');}
+}
 
 async function clearAllOc(){
   const total=ocorrencias.length;

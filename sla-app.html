@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#0B1320;--panel:#121D30;--panel2:#182740;--line:#24344F;
@@ -238,6 +239,18 @@ tr.editing td{background:rgba(245,166,35,.06)}
 
       <button class="btn btn-primary" id="oBtnAdd">+ Registrar ocorr&#234;ncia</button>
       <button class="btn btn-cancel" id="oBtnCancel" style="display:none">Cancelar edi&#231;&#227;o</button>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
+        <div class="panel-title" style="margin-bottom:10px;font-size:13px"><span class="dot" style="background:var(--purple);box-shadow:0 0 8px var(--purple)"></span>Importar Excel em massa</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+          Aba <b style="color:var(--text)">RELAT&#211;RIO</b> com colunas:<br>
+          <span style="color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:11px">Transportadora &middot; Notas &middot; Emiss&#227;o &middot; Motivo atraso</span><br>
+          Somente linhas com <b style="color:var(--text)">Motivo atraso</b> preenchido ser&#227;o importadas.
+        </div>
+        <input type="file" id="xlsxInput" accept=".xlsx,.xls" style="display:none">
+        <button class="btn" style="width:100%;background:rgba(155,140,255,.15);color:var(--purple);border:1px solid var(--purple)" onclick="document.getElementById('xlsxInput').click()">&#128196; Selecionar planilha Excel</button>
+        <div id="importStatus" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--muted)"></div>
+      </div>
     </div>
 
     <div class="panel" style="padding:20px 20px 8px">
@@ -567,6 +580,80 @@ function showPage(name,btn){
 
 // set today as default date
 document.getElementById('oInpData').value=new Date().toISOString().split('T')[0];
+
+/* ===== EXCEL IMPORT ===== */
+function detectTipo(motivo){
+  if(!motivo)return'Atraso';
+  const m=motivo.toLowerCase();
+  if(m.includes('agen'))return'Agendamento';
+  if(m.includes('recu'))return'Recusa';
+  if(m.includes('avariad')||m.includes('avaria'))return'Avaria';
+  if(m.includes('extravi')||m.includes('perda'))return'Extravio';
+  if(m.includes('ausente')||m.includes('nao encontrado')||m.includes('cliente'))return'Cliente Ausente';
+  return'Atraso';
+}
+
+function excelDateToISO(val){
+  if(!val)return null;
+  if(val instanceof Date){const d=val;return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+  if(typeof val==='number'){const d=XLSX.SSF.parse_date_code(val);if(d)return`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
+  if(typeof val==='string'){
+    // dd/mm/yyyy
+    const m1=val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m1)return`${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+    // yyyy-mm-dd
+    const m2=val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m2)return val.slice(0,10);
+  }
+  return null;
+}
+
+document.getElementById('xlsxInput').addEventListener('change',async function(){
+  const file=this.files[0];if(!file)return;
+  const imp=document.getElementById('importStatus');
+  imp.style.color='var(--muted)';imp.textContent='Lendo planilha...';
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array',cellDates:true});
+    // find RELATORIO sheet (case-insensitive, ignoring accents)
+    const shName=wb.SheetNames.find(n=>n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().includes('RELAT'));
+    if(!shName){imp.style.color='var(--red)';imp.textContent='\u26a0 Aba RELATÓRIO não encontrada.';return;}
+    const ws=wb.Sheets[shName];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    if(!rows.length){imp.style.color='var(--red)';imp.textContent='\u26a0 Planilha vazia.';return;}
+    // normalize column names
+    function findCol(row,candidates){return Object.keys(row).find(k=>candidates.some(c=>k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(c.toLowerCase())));}
+    const firstRow=rows[0];
+    const colTransp=findCol(firstRow,['transportadora','transp']);
+    const colNF=findCol(firstRow,['notas','nota','nf','numero']);
+    const colEmissao=findCol(firstRow,['emissao','emiss','data','entrega']);
+    const colMotivo=findCol(firstRow,['motivo','atraso','ocorr']);
+    if(!colTransp){imp.style.color='var(--red)';imp.textContent='\u26a0 Coluna "Transportadora" não encontrada.';return;}
+    if(!colMotivo){imp.style.color='var(--red)';imp.textContent='\u26a0 Coluna "Motivo atraso" não encontrada.';return;}
+    // filter rows with motivo preenchido
+    const valid=rows.filter(r=>{const m=colMotivo?String(r[colMotivo]||'').trim():'';return m.length>0;});
+    if(!valid.length){imp.style.color='var(--amber)';imp.textContent='\u26a0 Nenhuma linha com Motivo atraso preenchido.';return;}
+    imp.textContent=`Importando ${valid.length} ocorr\u00eancia(s)...`;
+    let ok=0,err=0;
+    for(const row of valid){
+      const transp=String(row[colTransp]||'').trim();
+      const nf=colNF?String(row[colNF]||'').trim():'';
+      const dataRaw=colEmissao?row[colEmissao]:'';
+      const data=excelDateToISO(dataRaw)||new Date().toISOString().split('T')[0];
+      const motivo=String(row[colMotivo]||'').trim();
+      const tipo=detectTipo(motivo);
+      if(!transp||!motivo)continue;
+      try{
+        const{error}=await sb.from('ocorrencias').insert({transportadora:transp,data_ocorrencia:data,tipo,numero_nf:nf||null,descricao:motivo,status:'Aberta'});
+        if(error)throw error;ok++;
+      }catch(e){err++;}
+    }
+    await reload();
+    imp.style.color=err===0?'var(--green)':'var(--amber)';
+    imp.textContent=`\u2713 ${ok} importada(s)${err>0?` · ${err} erro(s)`:''}`;
+    this.value='';
+  }catch(e){imp.style.color='var(--red)';imp.textContent='\u26a0 Erro ao ler o arquivo: '+e.message;}
+});
 
 loadAll();
 </script>

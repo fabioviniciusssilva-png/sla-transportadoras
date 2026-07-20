@@ -217,13 +217,12 @@ tr.editing td{background:rgba(245,166,35,.06)}
       <label class="lbl">Tipo</label>
       <select id="oInpTipo">
         <option value="">Selecione...</option>
-        <option>Atraso</option>
-        <option>Avaria</option>
+        <option>Imposto</option>
         <option>Extravio</option>
-        <option>Cliente Ausente</option>
-        <option>Recusa</option>
+        <option>Tratativa P&#243;s Venda</option>
         <option>Agendamento</option>
-        <option>Reten&#231;&#227;o Fiscal</option>
+        <option>Atraso</option>
+        <option>Sinistro</option>
       </select>
 
       <label class="lbl">N&#250;mero da NF</label>
@@ -258,7 +257,7 @@ tr.editing td{background:rgba(245,166,35,.06)}
       <div class="panel-title"><span class="dot amber"></span>Ocorr&#234;ncias por tipo</div>
       <div class="filters">
         <div><label class="lbl">Transportadora</label><select id="oFiltT"><option value="__all__">Todas</option></select></div>
-        <div><label class="lbl">Tipo</label><select id="oFiltTipo"><option value="__all__">Todos</option><option>Atraso</option><option>Avaria</option><option>Extravio</option><option>Cliente Ausente</option><option>Recusa</option><option>Agendamento</option><option>Reten&#231;&#227;o Fiscal</option></select></div>
+        <div><label class="lbl">Tipo</label><select id="oFiltTipo"><option value="__all__">Todos</option><option>Imposto</option><option>Extravio</option><option>Tratativa P&#243;s Venda</option><option>Agendamento</option><option>Atraso</option><option>Sinistro</option></select></div>
         <div><label class="lbl">Status</label><select id="oFiltStatus"><option value="__all__">Todos</option><option>Aberta</option><option>Resolvida</option></select></div>
       </div>
       <div class="chart-wrap"><canvas id="ocChart"></canvas></div>
@@ -321,7 +320,7 @@ const DEF=['Minuano','Patrus','MMA','Rio Vermelho','Panex','TRD','Rodovitor'];
 const MESES=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MESN=['','Janeiro','Fevereiro','Mar\u00e7o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const PAL=['#29D8D8','#F5A623','#3FCB8E','#F0616D','#9B8CFF','#FF9EC7','#63B3FF','#D4E157'];
-const OC_PAL={Atraso:'#F0616D',Avaria:'#F5A623',Extravio:'#9B8CFF','Cliente Ausente':'#63B3FF',Recusa:'#FF9EC7',Agendamento:'#3FCB8E','Retenção Fiscal':'#D4E157'};
+const OC_PAL={Imposto:'#F5A623',Extravio:'#9B8CFF','Tratativa Pós Venda':'#63B3FF',Agendamento:'#3FCB8E',Atraso:'#F0616D',Sinistro:'#FF9EC7'};
 
 let slaEntries=[],customCarriers=[],ocorrencias=[];
 let slaChart=null,ocChart=null,pSlaChart=null,pOcChart=null;
@@ -463,7 +462,7 @@ function renderOC(){
 
 function renderOcStats(){
   const filtered=ocorrencias;
-  const tipos=['Atraso','Avaria','Extravio','Cliente Ausente','Recusa','Agendamento','Retenção Fiscal'];
+  const tipos=['Imposto','Extravio','Tratativa Pós Venda','Agendamento','Atraso','Sinistro'];
   const total=filtered.length;const abertas=filtered.filter(o=>o.status==='Aberta').length;
   document.getElementById('ocStats').innerHTML=`
     <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">${total}</div><div class="stat-lbl">Total</div></div>
@@ -489,7 +488,7 @@ function renderOcTable(){
 }
 
 function renderOcChart(){
-  const tipos=['Atraso','Avaria','Extravio','Cliente Ausente','Recusa','Agendamento','Retenção Fiscal'];
+  const tipos=['Imposto','Extravio','Tratativa Pós Venda','Agendamento','Atraso','Sinistro'];
   const filtered=filtOc();
   const counts=tipos.map(tp=>filtered.filter(o=>o.tipo===tp).length);
   const ctx=document.getElementById('ocChart').getContext('2d');
@@ -548,7 +547,7 @@ function renderPainel(){
   document.getElementById('rankingSLA').innerHTML=slaByCarrier.length?slaByCarrier.map((r,i)=>`<div class="rank-item"><span class="rank-num">${i+1}</span><span class="rank-name">${esc(r.name)}</span><span class="rank-val" style="color:${r.val>=95?'var(--green)':'var(--red)'}">${r.val.toFixed(1)}%</span></div>`).join(''):'<div class="empty">Sem dados</div>';
 
   // oc por tipo chips
-  const tipos=['Atraso','Avaria','Extravio','Cliente Ausente','Recusa','Agendamento','Retenção Fiscal'];
+  const tipos=['Imposto','Extravio','Tratativa Pós Venda','Agendamento','Atraso','Sinistro'];
   document.getElementById('painelOcTipos').innerHTML=tipos.map(tp=>{const n=oc.filter(o=>o.tipo===tp).length;return`<span class="oc-chip" style="background:${OC_PAL[tp]}22;color:${OC_PAL[tp]}">${tp}: ${n}</span>`;}).join('');
 
   // oc bar chart
@@ -590,11 +589,10 @@ function detectTipo(motivo){
   if(!motivo)return'Atraso';
   const m=motivo.toLowerCase();
   if(m.includes('agen'))return'Agendamento';
-  if(m.includes('reten')||m.includes('fiscal')||m.includes('sefaz'))return'Retenção Fiscal';
-  if(m.includes('recu'))return'Recusa';
-  if(m.includes('avariad')||m.includes('avaria'))return'Avaria';
+  if(m.includes('imposto')||m.includes('fiscal')||m.includes('sefaz')||m.includes('reten'))return'Imposto';
+  if(m.includes('sinist'))return'Sinistro';
   if(m.includes('extravi')||m.includes('perda'))return'Extravio';
-  if(m.includes('ausente')||m.includes('nao encontrado')||m.includes('cliente'))return'Cliente Ausente';
+  if(m.includes('tratativ')||m.includes('pos venda')||m.includes('pós venda'))return'Tratativa Pós Venda';
   return'Atraso';
 }
 

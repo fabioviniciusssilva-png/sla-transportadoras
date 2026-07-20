@@ -511,7 +511,7 @@ document.getElementById('oBtnAdd').addEventListener('click',async()=>{
   }catch(e){st('\u26a0 Erro ao salvar');}
 });
 
-function oEdit(id){const o=ocorrencias.find(x=>x.id===id);if(!o)return;oEditId=id;document.getElementById('oInpTransp').value=o.transportadora;document.getElementById('oInpData').value=o.data||'';document.getElementById('oInpTipo').value=o.tipo;document.getElementById('oInpNF').value=o.nf||'';document.getElementById('oInpDesc').value=o.desc||'';document.getElementById('oInpStatus').value=o.status;document.getElementById('oBtnAdd').textContent='\u2713 Salvar altera\u00e7\u00f5es';document.getElementById('oBtnCancel').style.display='block';renderOcTable();}
+function oEdit(id){const o=ocorrencias.find(x=>x.id===id);if(!o)return;oEditId=id;renderOcTable();document.getElementById('oInpTransp').value=o.transportadora;document.getElementById('oInpData').value=o.data||'';document.getElementById('oInpTipo').value=o.tipo;document.getElementById('oInpNF').value=o.nf||'';document.getElementById('oInpDesc').value=o.desc||'';document.getElementById('oInpStatus').value=o.status;document.getElementById('oBtnAdd').textContent='✓ Salvar alterações';document.getElementById('oBtnCancel').style.display='block';document.getElementById('oBtnAdd').scrollIntoView({behavior:'smooth',block:'center'});}
 function oCancelEdit(){oEditId=null;['oInpNF','oInpDesc'].forEach(id=>document.getElementById(id).value='');document.getElementById('oInpTransp').value='';document.getElementById('oInpTipo').value='';document.getElementById('oInpStatus').value='Aberta';document.getElementById('oBtnAdd').textContent='+ Registrar ocorr\u00eancia';document.getElementById('oBtnCancel').style.display='none';renderOcTable();}
 document.getElementById('oBtnCancel').addEventListener('click',oCancelEdit);
 async function oDel(id){try{await sb.from('ocorrencias').delete().eq('id',id);ocorrencias=ocorrencias.filter(o=>o.id!==id);if(oEditId===id)oCancelEdit();renderAll();}catch(e){}}
@@ -587,12 +587,17 @@ document.getElementById('oInpData').value=new Date().toISOString().split('T')[0]
 /* ===== EXCEL IMPORT ===== */
 function detectTipo(motivo){
   if(!motivo)return'Atraso';
-  const m=motivo.toLowerCase();
+  const m=motivo.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   if(m.includes('agen'))return'Agendamento';
-  if(m.includes('imposto')||m.includes('fiscal')||m.includes('sefaz')||m.includes('reten'))return'Imposto';
+  if(m.includes('imposto')||m.includes('fiscal')||m.includes('sefaz')||m.includes('reten')||m==='imposto')return'Imposto';
   if(m.includes('sinist'))return'Sinistro';
   if(m.includes('extravi')||m.includes('perda'))return'Extravio';
-  if(m.includes('tratativ')||m.includes('pos venda')||m.includes('pós venda'))return'Tratativa Pós Venda';
+  if(m.includes('tratativ')||m.includes('pos venda')||m.includes('venda'))return'Tratativa Pós Venda';
+  if(m.includes('atraso'))return'Atraso';
+  // direct match - if motivo IS the type name, use it directly
+  const tipos=['Imposto','Extravio','Tratativa Pós Venda','Agendamento','Atraso','Sinistro'];
+  const direct=tipos.find(t=>t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')===m);
+  if(direct)return direct;
   return'Atraso';
 }
 
